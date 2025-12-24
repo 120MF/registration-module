@@ -1,8 +1,24 @@
 import axios from 'axios';
 
+// 根据环境设置基础URL
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    // 浏览器环境
+    if (process.env.NODE_ENV === 'production') {
+      // 生产环境，可以根据需要设置实际的API服务器地址
+      // 如果没有后端API，保持为相对路径，让部署平台处理
+      return '/api';
+    } else {
+      // 开发环境
+      return '/api';
+    }
+  }
+  return '/api';
+};
+
 // 创建axios实例
 const request = axios.create({
-  baseURL: '/api', // 统一的基础路径
+  baseURL: getBaseURL(), // 统一的基础路径
   timeout: 10000, // 请求超时时间
 });
 

@@ -67,10 +67,9 @@ const LoginPage: React.FC = () => {
             name="password"
             rules={[{ required: true, message: '请输入密码!' }]}
           >
-            <Input.Password 
-              prefix={<LockOutlined />} 
-              placeholder="密码" 
-              defaultValue="123456"
+            <Input.Password
+              prefix={<LockOutlined />}
+              placeholder="密码"
             />
           </Form.Item>
 
