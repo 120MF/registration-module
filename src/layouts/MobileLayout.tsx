@@ -1,0 +1,85 @@
+import React from 'react';
+import { Layout, Menu, Typography, Grid } from 'antd';
+import { AppstoreOutlined, UserOutlined, HistoryOutlined, SettingOutlined } from '@ant-design/icons';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import type { MenuProps } from 'antd';
+
+const { Header, Content, Footer } = Layout;
+const { useBreakpoint } = Grid;
+const { Title } = Typography;
+
+const MobileLayout: React.FC = () => {
+  const location = useLocation();
+  const screens = useBreakpoint();
+  
+  const menuItems: MenuProps['items'] = [
+    {
+      key: '/patient',
+      label: '首页',
+      icon: <AppstoreOutlined />,
+    },
+    {
+      key: '/patient/profile',
+      label: '档案',
+      icon: <UserOutlined />,
+    },
+    {
+      key: '/patient/history',
+      label: '查询',
+      icon: <HistoryOutlined />,
+    },
+    {
+      key: '/patient/settings',
+      label: '设置',
+      icon: <SettingOutlined />,
+    },
+  ];
+
+  // Determine active key based on current path
+  const currentKey = menuItems?.find(item => location.pathname.startsWith(item?.key || ''))?.key || '/patient';
+
+  return (
+    <Layout style={{ 
+      minHeight: '100vh',
+      maxWidth: screens.md ? '400px' : '100%', 
+      margin: screens.md ? '0 auto' : '0',
+      background: '#f5f5f5'
+    }}>
+      <Header style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        backgroundColor: '#1890ff',
+        padding: '0 20px'
+      }}>
+        <Title level={4} style={{ color: 'white', margin: 0, flex: 1 }}>患者服务</Title>
+      </Header>
+      <Content
+        style={{
+          padding: '20px 12px',
+          margin: 0,
+          minHeight: 280,
+        }}
+      >
+        <Outlet />
+      </Content>
+      <Footer style={{ padding: 0 }}>
+        <Menu
+          mode="horizontal"
+          selectedKeys={[currentKey]}
+          style={{ 
+            display: 'flex',
+            justifyContent: 'space-around',
+            borderTop: '1px solid #e8e8e8',
+            background: '#fff'
+          }}
+          items={menuItems.map(item => ({
+            ...item,
+            label: <Link to={item.key as string}>{item.label}</Link>
+          }))}
+        />
+      </Footer>
+    </Layout>
+  );
+};
+
+export default MobileLayout;
