@@ -14,29 +14,19 @@ const MobileLayout: React.FC = () => {
   
   const menuItems: MenuProps['items'] = [
     {
-      key: '/patient',
-      label: '首页',
-      icon: <AppstoreOutlined />,
-    },
-    {
       key: '/patient/profile',
       label: '档案',
       icon: <UserOutlined />,
     },
     {
-      key: '/patient/history',
-      label: '查询',
-      icon: <HistoryOutlined />,
-    },
-    {
-      key: '/patient/settings',
-      label: '设置',
-      icon: <SettingOutlined />,
+      key: '/patient/registration',
+      label: '挂号',
+      icon: <AppstoreOutlined />,
     },
   ];
 
   // Determine active key based on current path
-  const currentKey = menuItems?.find(item => location.pathname.startsWith(item?.key || ''))?.key || '/patient';
+  const currentKey = menuItems?.find(item => location.pathname.startsWith(item?.key || ''))?.key || '/patient/profile';
 
   return (
     <Layout style={{ 

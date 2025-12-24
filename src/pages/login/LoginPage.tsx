@@ -21,14 +21,11 @@ const LoginPage: React.FC = () => {
       if (values.username === 'admin') {
         navigate('/admin');
         message.success('管理员登录成功');
-      } else if (values.username === 'doctor') {
-        navigate('/doctor');
-        message.success('医生登录成功');
       } else if (values.username === 'patient') {
         navigate('/patient');
         message.success('患者登录成功');
       } else {
-        message.error('用户名不存在，请尝试 admin, doctor 或 patient');
+        message.error('用户名不存在，请尝试 admin 或 patient');
       }
     }, 1000);
   };
@@ -59,7 +56,7 @@ const LoginPage: React.FC = () => {
           >
             <Input 
               prefix={<UserOutlined />} 
-              placeholder="用户名 (admin, doctor, patient)" 
+              placeholder="用户名 (admin, patient)" 
             />
           </Form.Item>
 
@@ -86,7 +83,7 @@ const LoginPage: React.FC = () => {
           
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             <Typography.Text type="secondary">
-              提示: 可使用 admin, doctor, patient 作为用户名登录不同角色
+              提示: 可使用 admin 或 patient 作为用户名登录不同角色
             </Typography.Text>
           </div>
         </Form>

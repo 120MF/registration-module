@@ -2,17 +2,10 @@
 
 import type {
   Department,
-  Device,
-  Doctor,
-  Drug,
-  Examination,
-  MedicalHistory,
-  Patient,
   PatientProfile,
   Registration,
   Scheduling,
   Staff,
-  Test,
 } from '../types';
 import request from './request';
 
@@ -43,38 +36,6 @@ export const staffAPI = {
       .then((res) => res.data),
 };
 
-// 设备管理API
-export const deviceAPI = {
-  getDevices: () =>
-    request
-      .get<{ success: boolean; data: Device[] }>('/devices')
-      .then((res) => res.data),
-};
-
-// 字典管理API
-export const dictAPI = {
-  getDrugs: () =>
-    request
-      .get<{ success: boolean; data: Drug[] }>('/drugs')
-      .then((res) => res.data),
-  getExaminations: () =>
-    request
-      .get<{ success: boolean; data: Examination[] }>('/examinations')
-      .then((res) => res.data),
-  getTests: () =>
-    request
-      .get<{ success: boolean; data: Test[] }>('/tests')
-      .then((res) => res.data),
-};
-
-// 医生工作站API
-export const doctorAPI = {
-  getPatientQueue: () =>
-    request
-      .get<{ success: boolean; data: Patient[] }>('/patients/queue')
-      .then((res) => res.data),
-};
-
 // 患者服务API
 export const patientAPI = {
   getProfile: () =>
@@ -85,7 +46,7 @@ export const patientAPI = {
     request.put<PatientProfile>('/patients/profile', data),
   getDoctorsByDepartment: (deptId: number) =>
     request
-      .get<{ success: boolean; data: Doctor[] }>(
+      .get<{ success: boolean; data: any[] }>(
         `/departments/${deptId}/doctors`,
       )
       .then((res) => res.data),
@@ -93,10 +54,6 @@ export const patientAPI = {
     request.get<{ success: boolean; data: any[] }>(`/doctors/${doctorId}/schedules`).then(res => res.data),
   createRegistration: (data: Omit<Registration, 'id'>) =>
     request.post<Registration>('/registrations', data),
-  getHistory: () =>
-    request
-      .get<{ success: boolean; data: MedicalHistory[] }>('/patients/history')
-      .then((res) => res.data),
 };
 
 // 管理员API
@@ -113,7 +70,7 @@ export const adminAPI = {
   deleteScheduling: (id: number) => request.delete(`/scheduling/${id}`),
   getDoctorsByDepartment: (deptId: number) =>
     request
-      .get<{ success: boolean; data: Doctor[] }>(
+      .get<{ success: boolean; data: any[] }>(
         `/departments/${deptId}/doctors`,
       )
       .then((res) => res.data),

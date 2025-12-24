@@ -15,7 +15,7 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { adminAPI, departmentAPI } from '../../services/api';
-import { Scheduling, Department, Doctor } from '../../types';
+import { Scheduling, Department } from '../../types';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -26,7 +26,7 @@ const SchedulingPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Scheduling[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctors, setDoctors] = useState<any[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<Scheduling | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);

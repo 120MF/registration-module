@@ -19,14 +19,6 @@ const AdminLayout: React.FC = () => {
       label: <Link to="/admin/staff">人员管理</Link>,
     },
     {
-      key: '/admin/devices',
-      label: <Link to="/admin/devices">设备管理</Link>,
-    },
-    {
-      key: '/admin/drugs',
-      label: <Link to="/admin/drugs">药品字典</Link>,
-    },
-    {
       key: '/admin/scheduling',
       label: <Link to="/admin/scheduling">号源管理</Link>,
     },

@@ -3,7 +3,7 @@ import { Form, Select, DatePicker, Button, Table, message, Card, Space } from 'a
 import { AppstoreOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { patientAPI, departmentAPI } from '../../services/api';
-import { Department, Doctor, Scheduling } from '../../types';
+import { Department, Scheduling } from '../../types';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -13,7 +13,7 @@ const RegistrationPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [doctors, setDoctors] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<Scheduling[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
