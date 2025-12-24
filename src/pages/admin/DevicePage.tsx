@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, DatePicker, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { deviceAPI } from '../../services/api';
+import { Device } from '../../types';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
 
 const DevicePage: React.FC = () => {
-  const [devices, setDevices] = useState<any[]>([]);
+  const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(false);
 
   // 获取设备列表
@@ -15,9 +16,10 @@ const DevicePage: React.FC = () => {
     setLoading(true);
     try {
       const response = await deviceAPI.getDevices();
-      setDevices(response.data);
+      setDevices(response || []);
     } catch (error) {
       message.error('获取设备列表失败');
+      setDevices([]);
     } finally {
       setLoading(false);
     }
@@ -31,7 +33,7 @@ const DevicePage: React.FC = () => {
     {
       title: '序号',
       key: 'index',
-      render: (text: any, record: any, index: number) => index + 1,
+      render: (text: any, record: Device, index: number) => index + 1,
     },
     {
       title: '设备名称',
@@ -41,7 +43,7 @@ const DevicePage: React.FC = () => {
     {
       title: '所属科室',
       key: 'departmentId',
-      render: (text: any, record: any) => {
+      render: (text: any, record: Device) => {
         const deptMap: Record<number, string> = {
           101: '内科',
           102: '外科',
@@ -61,7 +63,7 @@ const DevicePage: React.FC = () => {
     {
       title: '状态',
       key: 'status',
-      render: (text: any, record: any) => (
+      render: (text: any, record: Device) => (
         <Tag color={record.status === '正常' ? 'green' : 'red'}>
           {record.status}
         </Tag>
@@ -70,7 +72,7 @@ const DevicePage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (text: any, record: any) => (
+      render: (text: any, record: Device) => (
         <Space size="middle">
           <Button type="link">编辑</Button>
           <Button type="link" danger>删除</Button>

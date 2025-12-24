@@ -15,6 +15,7 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { adminAPI, departmentAPI } from '../../services/api';
+import { Scheduling, Department, Doctor } from '../../types';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -23,11 +24,11 @@ const { Option } = Select;
 const SchedulingPage: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [doctors, setDoctors] = useState<any[]>([]);
+  const [data, setData] = useState<Scheduling[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [editingRecord, setEditingRecord] = useState<Scheduling | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
 
   const { message, modal } = App.useApp();
@@ -37,7 +38,7 @@ const SchedulingPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await adminAPI.getScheduling();
-      setData(response.data);
+      setData(response || []);
     } catch (error) {
       message.error('获取号源数据失败');
     } finally {
@@ -49,7 +50,7 @@ const SchedulingPage: React.FC = () => {
   const fetchDepartments = async () => {
     try {
       const response = await adminAPI.getDepartments();
-      setDepartments(response.data);
+      setDepartments(response || []);
     } catch (error) {
       message.error('获取科室列表失败');
     }
@@ -59,7 +60,7 @@ const SchedulingPage: React.FC = () => {
   const fetchDoctors = async (deptId: number) => {
     try {
       const response = await adminAPI.getDoctorsByDepartment(deptId);
-      setDoctors(response.data);
+      setDoctors(response || []);
     } catch (error) {
       message.error('获取医生列表失败');
     }
@@ -76,21 +77,26 @@ const SchedulingPage: React.FC = () => {
   };
 
   // 保存号源信息
-  const handleSave = async (values: any) => {
+  const handleSave = async (values: Omit<Scheduling, 'id' | 'departmentName' | 'doctorName' | 'booked'>) => {
     try {
       if (editingRecord) {
         // 更新现有号源
         await adminAPI.updateScheduling(editingRecord.id, {
           ...values,
-          date: dayjs(values.date).format('YYYY-MM-DD')
-        });
+          date: dayjs(values.date).format('YYYY-MM-DD'),
+          departmentName: departments.find(d => d.id === values.departmentId)?.name || editingRecord.departmentName,
+          doctorName: doctors.find(d => d.id === values.doctorId)?.name || editingRecord.doctorName,
+        } as Partial<Scheduling>);
         message.success('更新号源成功');
       } else {
         // 创建新号源
         await adminAPI.createScheduling({
           ...values,
-          date: dayjs(values.date).format('YYYY-MM-DD')
-        });
+          date: dayjs(values.date).format('YYYY-MM-DD'),
+          departmentName: departments.find(d => d.id === values.departmentId)?.name || '',
+          doctorName: doctors.find(d => d.id === values.doctorId)?.name || '',
+          booked: 0
+        } as Omit<Scheduling, 'id'>);
         message.success('创建号源成功');
       }
 
@@ -115,7 +121,7 @@ const SchedulingPage: React.FC = () => {
   };
 
   // 编辑号源
-  const handleEdit = (record: any) => {
+  const handleEdit = (record: Scheduling) => {
     setEditingRecord(record);
     form.setFieldsValue({
       ...record,
@@ -179,7 +185,7 @@ const SchedulingPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: any) => (
+      render: (_: any, record: Scheduling) => (
         <Space size="middle">
           <Button
             type="link"

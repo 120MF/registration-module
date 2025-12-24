@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Form, Select, DatePicker, Button, Table, message, Card, Space } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { patientAPI } from '../../services/api';
+import { patientAPI, departmentAPI } from '../../services/api';
+import { Department, Doctor, Scheduling } from '../../types';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -11,19 +12,18 @@ const RegistrationPage: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [doctors, setDoctors] = useState<any[]>([]);
-  const [schedules, setSchedules] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [schedules, setSchedules] = useState<Scheduling[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
 
   // 获取科室列表
   const fetchDepartments = async () => {
     try {
-      const response = await fetch('/api/departments');
-      const data = await response.json();
-      // 从mock数据中筛选出有效的科室
-      const validDepts = data.data.filter((dept: any) => dept.status === 1);
+      const response = await departmentAPI.getDepartments();
+      // 从数据中筛选出有效的科室
+      const validDepts = (response || []).filter((dept: Department) => dept.status === 1);
       setDepartments(validDepts);
     } catch (error) {
       message.error('获取科室列表失败');
@@ -34,7 +34,7 @@ const RegistrationPage: React.FC = () => {
   const fetchDoctors = async (deptId: number) => {
     try {
       const response = await patientAPI.getDoctorsByDepartment(deptId);
-      setDoctors(response.data);
+      setDoctors(response || []);
       // 重置医生和号源选择
       setSelectedDoctor(null);
       setSchedules([]);
@@ -49,7 +49,7 @@ const RegistrationPage: React.FC = () => {
     try {
       const response = await patientAPI.getDoctorSchedules(doctorId);
       // 过滤出可用的号源
-      const availableSchedules = response.data.filter((sched: any) => sched.available && sched.booked < sched.maxPatients);
+      const availableSchedules = (response || []).filter((sched: Scheduling) => sched.available && sched.booked < sched.maxPatients);
       setSchedules(availableSchedules);
     } catch (error) {
       message.error('获取号源信息失败');
@@ -57,7 +57,7 @@ const RegistrationPage: React.FC = () => {
   };
 
   // 提交挂号
-  const handleSubmit = async (values: any) => {
+  const handleSubmit = async (values: { doctorId: number; scheduleId: number }) => {
     setSubmitting(true);
     try {
       await patientAPI.createRegistration({
@@ -126,14 +126,14 @@ const RegistrationPage: React.FC = () => {
     {
       title: '剩余号源',
       key: 'remaining',
-      render: (text: any, record: any) => record.maxPatients - record.booked,
+      render: (text: any, record: Scheduling) => record.maxPatients - record.booked,
     },
     {
       title: '操作',
       key: 'action',
-      render: (text: any, record: any) => (
-        <Button 
-          type="link" 
+      render: (text: any, record: Scheduling) => (
+        <Button
+          type="link"
           disabled={record.booked >= record.maxPatients}
           onClick={() => {
             form.setFieldsValue({ scheduleId: record.id });

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Input, Select, message } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { staffAPI } from '../../services/api';
+import { Staff } from '../../types';
 
 const { Search } = Input;
 const { Option } = Select;
 
 const StaffPage: React.FC = () => {
-  const [staffList, setStaffList] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
@@ -17,9 +18,10 @@ const StaffPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await staffAPI.getStaff();
-      setStaffList(response.data);
+      setStaffList(response || []);
     } catch (error) {
       message.error('获取人员列表失败');
+      setStaffList([]);
     } finally {
       setLoading(false);
     }

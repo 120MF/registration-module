@@ -1,5 +1,6 @@
 import MockAdapter from 'axios-mock-adapter';
 import request from '../services/request';
+import { Scheduling, Department, Doctor, Staff, Device, Drug, Examination, Test, Patient, PatientProfile, MedicalHistory, Prescription, SystemSettings } from '../types';
 
 const mock = new MockAdapter(request, { delayResponse: 500 });
 
@@ -58,7 +59,7 @@ mock.onGet('/departments').reply(200, {
     { id: 103, name: '儿科', status: 0, desc: '儿科诊疗' },
     { id: 104, name: '妇科', status: 1, desc: '妇科诊疗' },
     { id: 105, name: '眼科', status: 1, desc: '眼科诊疗' },
-  ],
+  ] as Department[],
 });
 
 mock.onPost('/departments').reply((config) => {
@@ -113,7 +114,7 @@ mock.onGet('/staff').reply(200, {
       position: '副主任医师',
       role: 'doctor',
     },
-  ],
+  ] as Staff[],
 });
 
 // 设备管理相关接口
@@ -141,7 +142,7 @@ mock.onGet('/devices').reply(200, {
       purchaseDate: '2022-11-10',
       status: '正常',
     },
-  ],
+  ] as Device[],
 });
 
 // 药品字典相关接口
@@ -151,7 +152,7 @@ mock.onGet('/drugs').reply(200, {
     { id: 1, name: '阿莫西林', price: 12.5, unit: '盒', stock: 50, status: 1 },
     { id: 2, name: '布洛芬', price: 8.3, unit: '盒', stock: 100, status: 1 },
     { id: 3, name: '头孢克肟', price: 25.0, unit: '盒', stock: 30, status: 0 },
-  ],
+  ] as Drug[],
 });
 
 // 检查项目相关接口
@@ -161,7 +162,7 @@ mock.onGet('/examinations').reply(200, {
     { id: 1, name: '胸部CT', price: 360, type: 'exam', status: 1 },
     { id: 2, name: '心电图', price: 25, type: 'exam', status: 1 },
     { id: 3, name: 'B超', price: 120, type: 'exam', status: 1 },
-  ],
+  ] as Examination[],
 });
 
 // 检验项目相关接口
@@ -171,7 +172,7 @@ mock.onGet('/tests').reply(200, {
     { id: 1, name: '血常规', price: 30, type: 'test', status: 1 },
     { id: 2, name: '尿常规', price: 25, type: 'test', status: 1 },
     { id: 3, name: '肝功能', price: 80, type: 'test', status: 1 },
-  ],
+  ] as Test[],
 });
 
 // 患者列表（医生端）
@@ -199,7 +200,7 @@ mock.onGet('/patients/queue').reply(200, {
       status: 'completed',
       time: '2025-05-20 08:45',
     },
-  ],
+  ] as Patient[],
 });
 
 // 患者档案相关接口
@@ -214,7 +215,7 @@ mock.onGet('/patients/profile').reply(200, {
     isInsurance: true,
     allergies: '青霉素过敏',
     medicalHistory: '高血压病史',
-  },
+  } as PatientProfile,
 });
 
 mock.onPut('/patients/profile').reply((config) => {
@@ -228,12 +229,15 @@ mock.onGet('/departments/doctors').reply(200, {
   data: [
     { id: 1, name: '张医生', departmentId: 101 },
     { id: 2, name: '刘医生', departmentId: 101 },
-  ],
+  ] as Doctor[],
 });
 
-mock.onGet('/doctors/schedules').reply(200, {
-  success: true,
-  data: [
+mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
+  const url = config.url;
+  const doctorId = Number(url?.split('/')[2]); // 提取URL中的医生ID
+
+  // 模拟号源数据
+  const mockSchedules = [
     {
       id: 1,
       doctorId: 1,
@@ -258,7 +262,35 @@ mock.onGet('/doctors/schedules').reply(200, {
       maxPatients: 0,
       booked: 0,
     },
-  ],
+    // 为其他医生添加默认数据
+    {
+      id: 4,
+      doctorId: doctorId,
+      date: '2025-05-27',
+      available: true,
+      maxPatients: 15,
+      booked: 3,
+    },
+    {
+      id: 5,
+      doctorId: doctorId,
+      date: '2025-05-28',
+      available: true,
+      maxPatients: 10,
+      booked: 0,
+    }
+  ];
+
+  // 只返回匹配医生ID的数据
+  const doctorSchedules = mockSchedules.filter(sched => sched.doctorId === doctorId);
+
+  return [
+    200,
+    {
+      success: true,
+      data: doctorSchedules,
+    }
+  ];
 });
 
 mock.onPost('/registrations').reply((config) => {
@@ -272,7 +304,7 @@ mock.onPost('/registrations').reply((config) => {
         id: 'GH' + Date.now(),
         status: 'pending',
         createTime: new Date().toISOString(),
-      },
+      } as Registration,
     },
   ];
 });
@@ -301,11 +333,11 @@ mock.onGet('/patients/history').reply(200, {
         { name: '氯雷他定', quantity: 1, dosage: '每日一次，每次1片' },
       ],
     },
-  ],
+  ] as MedicalHistory[],
 });
 
 // 号源管理相关接口
-let schedulingData = [
+let schedulingData: Scheduling[] = [
   {
     id: 1,
     departmentId: 101,
@@ -362,26 +394,29 @@ mock.onGet('/scheduling').reply(200, {
 });
 
 mock.onPost('/scheduling').reply((config) => {
-  const newScheduling = JSON.parse(config.data);
-  newScheduling.id = Date.now(); // 简单模拟ID生成
-  newScheduling.booked = 0; // 新建号源预约数为0
+  const newScheduling: Scheduling = {
+    ...JSON.parse(config.data),
+    id: Date.now(), // 简单模拟ID生成
+    booked: 0, // 新建号源预约数为0
+  };
+
   // 根据departmentId获取科室名称
-  const departments = [
-    { id: 101, name: '内科' },
-    { id: 102, name: '外科' },
-    { id: 103, name: '儿科' },
-    { id: 104, name: '妇科' },
-    { id: 105, name: '眼科' },
+  const departments: Department[] = [
+    { id: 101, name: '内科', status: 1 },
+    { id: 102, name: '外科', status: 1 },
+    { id: 103, name: '儿科', status: 1 },
+    { id: 104, name: '妇科', status: 1 },
+    { id: 105, name: '眼科', status: 1 },
   ];
   const dept = departments.find(d => d.id === newScheduling.departmentId);
   newScheduling.departmentName = dept ? dept.name : '未知科室';
 
   // 根据doctorId获取医生名称
-  const doctors = [
-    { id: 1, name: '张医生' },
-    { id: 2, name: '李医生' },
-    { id: 4, name: '刘医生' },
-    { id: 5, name: '陈医生' },
+  const doctors: Doctor[] = [
+    { id: 1, name: '张医生', departmentId: 101 },
+    { id: 2, name: '李医生', departmentId: 101 },
+    { id: 4, name: '刘医生', departmentId: 102 },
+    { id: 5, name: '陈医生', departmentId: 104 },
   ];
   const doc = doctors.find(d => d.id === newScheduling.doctorId);
   newScheduling.doctorName = doc ? doc.name : '未知医生';
@@ -393,30 +428,32 @@ mock.onPost('/scheduling').reply((config) => {
 mock.onPut(/\/scheduling\/\d+/).reply((config) => {
   const url = config.url;
   const id = Number(url?.split('/').pop());
-  const updatedScheduling = JSON.parse(config.data);
+  const updatedScheduling: Scheduling = {
+    ...JSON.parse(config.data),
+    id: id
+  };
 
   // 根据departmentId获取科室名称
-  const departments = [
-    { id: 101, name: '内科' },
-    { id: 102, name: '外科' },
-    { id: 103, name: '儿科' },
-    { id: 104, name: '妇科' },
-    { id: 105, name: '眼科' },
+  const departments: Department[] = [
+    { id: 101, name: '内科', status: 1 },
+    { id: 102, name: '外科', status: 1 },
+    { id: 103, name: '儿科', status: 1 },
+    { id: 104, name: '妇科', status: 1 },
+    { id: 105, name: '眼科', status: 1 },
   ];
   const dept = departments.find(d => d.id === updatedScheduling.departmentId);
   updatedScheduling.departmentName = dept ? dept.name : '未知科室';
 
   // 根据doctorId获取医生名称
-  const doctors = [
-    { id: 1, name: '张医生' },
-    { id: 2, name: '李医生' },
-    { id: 4, name: '刘医生' },
-    { id: 5, name: '陈医生' },
+  const doctors: Doctor[] = [
+    { id: 1, name: '张医生', departmentId: 101 },
+    { id: 2, name: '李医生', departmentId: 101 },
+    { id: 4, name: '刘医生', departmentId: 102 },
+    { id: 5, name: '陈医生', departmentId: 104 },
   ];
   const doc = doctors.find(d => d.id === updatedScheduling.doctorId);
   updatedScheduling.doctorName = doc ? doc.name : '未知医生';
 
-  updatedScheduling.id = id;
   schedulingData = schedulingData.map(item =>
     item.id === id ? { ...item, ...updatedScheduling } : item
   );
@@ -436,7 +473,7 @@ mock.onGet(/\/departments\/\d+\/doctors/).reply((config) => {
   const url = config.url;
   const departmentId = Number(url?.split('/')[2]); // 提取URL中的部门ID
 
-  const doctors = [
+  const doctors: Doctor[] = [
     { id: 1, name: '张医生', departmentId: 101 },
     { id: 2, name: '李医生', departmentId: 101 },
     { id: 4, name: '刘医生', departmentId: 102 },

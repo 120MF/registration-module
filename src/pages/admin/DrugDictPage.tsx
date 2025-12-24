@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Tag, Input, Switch, message } from 'antd';
 import { SearchOutlined, PlusOutlined } from '@ant-design/icons';
 import { dictAPI } from '../../services/api';
+import { Drug } from '../../types';
 
 const { Search } = Input;
 
 const DrugDictPage: React.FC = () => {
-  const [drugs, setDrugs] = useState<any[]>([]);
+  const [drugs, setDrugs] = useState<Drug[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
 
@@ -15,9 +16,10 @@ const DrugDictPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await dictAPI.getDrugs();
-      setDrugs(response.data);
+      setDrugs(response || []);
     } catch (error) {
       message.error('获取药品列表失败');
+      setDrugs([]);
     } finally {
       setLoading(false);
     }
@@ -28,7 +30,7 @@ const DrugDictPage: React.FC = () => {
   }, []);
 
   // 过滤数据
-  const filteredDrugs = drugs.filter(drug => 
+  const filteredDrugs = drugs.filter((drug: Drug) =>
     drug.name.toLowerCase().includes(searchText.toLowerCase())
   );
 
@@ -36,7 +38,7 @@ const DrugDictPage: React.FC = () => {
     {
       title: '序号',
       key: 'index',
-      render: (text: any, record: any, index: number) => index + 1,
+      render: (text: any, record: Drug, index: number) => index + 1,
     },
     {
       title: '药品名称',
@@ -62,9 +64,9 @@ const DrugDictPage: React.FC = () => {
     {
       title: '是否启用',
       key: 'status',
-      render: (text: any, record: any) => (
-        <Switch 
-          checked={record.status === 1} 
+      render: (text: any, record: Drug) => (
+        <Switch
+          checked={record.status === 1}
           disabled
         />
       ),
@@ -72,7 +74,7 @@ const DrugDictPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (text: any, record: any) => (
+      render: (text: any, record: Drug) => (
         <Space size="middle">
           <Button type="link">编辑</Button>
           <Button type="link" danger>删除</Button>
