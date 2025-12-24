@@ -26,6 +26,10 @@ const AdminLayout: React.FC = () => {
       key: '/admin/drugs',
       label: <Link to="/admin/drugs">药品字典</Link>,
     },
+    {
+      key: '/admin/scheduling',
+      label: <Link to="/admin/scheduling">号源管理</Link>,
+    },
   ];
 
   return (

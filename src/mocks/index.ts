@@ -304,6 +304,150 @@ mock.onGet('/patients/history').reply(200, {
   ],
 });
 
+// 号源管理相关接口
+let schedulingData = [
+  {
+    id: 1,
+    departmentId: 101,
+    departmentName: '内科',
+    doctorId: 1,
+    doctorName: '张医生',
+    date: '2025-05-25',
+    timeSlot: '上午 8:00-12:00',
+    maxPatients: 20,
+    booked: 5,
+    status: 1, // 1: 启用, 0: 停用
+  },
+  {
+    id: 2,
+    departmentId: 101,
+    departmentName: '内科',
+    doctorId: 1,
+    doctorName: '张医生',
+    date: '2025-05-26',
+    timeSlot: '下午 14:00-18:00',
+    maxPatients: 15,
+    booked: 8,
+    status: 1,
+  },
+  {
+    id: 3,
+    departmentId: 102,
+    departmentName: '外科',
+    doctorId: 4,
+    doctorName: '刘医生',
+    date: '2025-05-25',
+    timeSlot: '上午 8:00-12:00',
+    maxPatients: 12,
+    booked: 12,
+    status: 1,
+  },
+  {
+    id: 4,
+    departmentId: 104,
+    departmentName: '妇科',
+    doctorId: 5,
+    doctorName: '陈医生',
+    date: '2025-05-27',
+    timeSlot: '上午 9:00-12:00',
+    maxPatients: 10,
+    booked: 0,
+    status: 0, // 停用
+  },
+];
+
+mock.onGet('/scheduling').reply(200, {
+  success: true,
+  data: schedulingData,
+});
+
+mock.onPost('/scheduling').reply((config) => {
+  const newScheduling = JSON.parse(config.data);
+  newScheduling.id = Date.now(); // 简单模拟ID生成
+  newScheduling.booked = 0; // 新建号源预约数为0
+  // 根据departmentId获取科室名称
+  const departments = [
+    { id: 101, name: '内科' },
+    { id: 102, name: '外科' },
+    { id: 103, name: '儿科' },
+    { id: 104, name: '妇科' },
+    { id: 105, name: '眼科' },
+  ];
+  const dept = departments.find(d => d.id === newScheduling.departmentId);
+  newScheduling.departmentName = dept ? dept.name : '未知科室';
+
+  // 根据doctorId获取医生名称
+  const doctors = [
+    { id: 1, name: '张医生' },
+    { id: 2, name: '李医生' },
+    { id: 4, name: '刘医生' },
+    { id: 5, name: '陈医生' },
+  ];
+  const doc = doctors.find(d => d.id === newScheduling.doctorId);
+  newScheduling.doctorName = doc ? doc.name : '未知医生';
+
+  schedulingData.push(newScheduling);
+  return [200, { success: true, data: newScheduling }];
+});
+
+mock.onPut(/\/scheduling\/\d+/).reply((config) => {
+  const url = config.url;
+  const id = Number(url?.split('/').pop());
+  const updatedScheduling = JSON.parse(config.data);
+
+  // 根据departmentId获取科室名称
+  const departments = [
+    { id: 101, name: '内科' },
+    { id: 102, name: '外科' },
+    { id: 103, name: '儿科' },
+    { id: 104, name: '妇科' },
+    { id: 105, name: '眼科' },
+  ];
+  const dept = departments.find(d => d.id === updatedScheduling.departmentId);
+  updatedScheduling.departmentName = dept ? dept.name : '未知科室';
+
+  // 根据doctorId获取医生名称
+  const doctors = [
+    { id: 1, name: '张医生' },
+    { id: 2, name: '李医生' },
+    { id: 4, name: '刘医生' },
+    { id: 5, name: '陈医生' },
+  ];
+  const doc = doctors.find(d => d.id === updatedScheduling.doctorId);
+  updatedScheduling.doctorName = doc ? doc.name : '未知医生';
+
+  updatedScheduling.id = id;
+  schedulingData = schedulingData.map(item =>
+    item.id === id ? { ...item, ...updatedScheduling } : item
+  );
+
+  return [200, { success: true, data: updatedScheduling }];
+});
+
+mock.onDelete(/\/scheduling\/\d+/).reply((config) => {
+  const url = config.url;
+  const id = Number(url?.split('/').pop());
+  schedulingData = schedulingData.filter(item => item.id !== id);
+  return [200, { success: true, message: `号源${id}删除成功` }];
+});
+
+// 根据科室获取医生
+mock.onGet(/\/departments\/\d+\/doctors/).reply((config) => {
+  const url = config.url;
+  const departmentId = Number(url?.split('/')[2]); // 提取URL中的部门ID
+
+  const doctors = [
+    { id: 1, name: '张医生', departmentId: 101 },
+    { id: 2, name: '李医生', departmentId: 101 },
+    { id: 4, name: '刘医生', departmentId: 102 },
+    { id: 5, name: '陈医生', departmentId: 104 },
+  ];
+
+  const filteredDoctors = doctors.filter(doctor => doctor.departmentId === departmentId);
+
+  return [200, { success: true, data: filteredDoctors }];
+});
+
 // 兜底策略：未匹配的请求通过网络发送
 mock.onAny().passThrough();
 

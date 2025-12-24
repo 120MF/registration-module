@@ -45,3 +45,15 @@ export const patientAPI = {
   createRegistration: (data: any) => request.post('/registrations', data),
   getHistory: () => request.get('/patients/history'),
 };
+
+// 管理员API
+export const adminAPI = {
+  // 号源管理API
+  getScheduling: () => request.get('/scheduling'),
+  createScheduling: (data: any) => request.post('/scheduling', data),
+  updateScheduling: (id: number, data: any) => request.put(`/scheduling/${id}`, data),
+  deleteScheduling: (id: number) => request.delete(`/scheduling/${id}`),
+  getDoctorsByDepartment: (deptId: number) => request.get(`/departments/${deptId}/doctors`),
+  // 其他管理API
+  getDepartments: () => request.get('/departments'),
+};
