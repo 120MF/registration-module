@@ -23,6 +23,11 @@ const MobileLayout: React.FC = () => {
       label: '挂号',
       icon: <AppstoreOutlined />,
     },
+    {
+      key: '/patient/history',
+      label: '历史',
+      icon: <HistoryOutlined />,
+    },
   ];
 
   // Determine active key based on current path
@@ -56,14 +61,14 @@ const MobileLayout: React.FC = () => {
         <Menu
           mode="horizontal"
           selectedKeys={[currentKey]}
-          style={{ 
+          style={{
             display: 'flex',
-            justifyContent: 'space-around',
             borderTop: '1px solid #e8e8e8',
             background: '#fff'
           }}
           items={menuItems.map(item => ({
             ...item,
+            style: { flex: 1, textAlign: 'center' }, // Make each tab equal width
             label: <Link to={item.key as string}>{item.label}</Link>
           }))}
         />

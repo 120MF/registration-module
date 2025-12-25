@@ -224,6 +224,12 @@ mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
       available: true,
       maxPatients: 20,
       booked: 5,
+      departmentId: 101,
+      departmentName: '内科',
+      doctorName: '张医生',
+      timeSlot: '上午 8:00-12:00',
+      status: 1,
+      amount: 50, // 挂号费用
     },
     {
       id: 2,
@@ -232,6 +238,12 @@ mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
       available: true,
       maxPatients: 20,
       booked: 12,
+      departmentId: 101,
+      departmentName: '内科',
+      doctorName: '张医生',
+      timeSlot: '下午 14:00-18:00',
+      status: 1,
+      amount: 50, // 挂号费用
     },
     {
       id: 3,
@@ -240,6 +252,12 @@ mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
       available: false,
       maxPatients: 0,
       booked: 0,
+      departmentId: 101,
+      departmentName: '内科',
+      doctorName: '李医生',
+      timeSlot: '上午 8:00-12:00',
+      status: 1,
+      amount: 50, // 挂号费用
     },
     // 为其他医生添加默认数据
     {
@@ -249,6 +267,12 @@ mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
       available: true,
       maxPatients: 15,
       booked: 3,
+      departmentId: 102,
+      departmentName: '外科',
+      doctorName: '刘医生',
+      timeSlot: '上午 9:00-12:00',
+      status: 1,
+      amount: 60, // 挂号费用
     },
     {
       id: 5,
@@ -257,6 +281,12 @@ mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
       available: true,
       maxPatients: 10,
       booked: 0,
+      departmentId: 104,
+      departmentName: '妇科',
+      doctorName: '陈医生',
+      timeSlot: '上午 9:00-12:00',
+      status: 1,
+      amount: 45, // 挂号费用
     }
   ];
 
@@ -302,6 +332,7 @@ let schedulingData: Scheduling[] = [
     maxPatients: 20,
     booked: 5,
     status: 1, // 1: 启用, 0: 停用
+    amount: 50, // 挂号费用
   },
   {
     id: 2,
@@ -314,6 +345,7 @@ let schedulingData: Scheduling[] = [
     maxPatients: 15,
     booked: 8,
     status: 1,
+    amount: 50, // 挂号费用
   },
   {
     id: 3,
@@ -326,6 +358,7 @@ let schedulingData: Scheduling[] = [
     maxPatients: 12,
     booked: 12,
     status: 1,
+    amount: 60, // 挂号费用
   },
   {
     id: 4,
@@ -338,6 +371,7 @@ let schedulingData: Scheduling[] = [
     maxPatients: 10,
     booked: 0,
     status: 0, // 停用
+    amount: 45, // 挂号费用
   },
 ];
 
@@ -351,6 +385,7 @@ mock.onPost('/scheduling').reply((config) => {
     ...JSON.parse(config.data),
     id: Date.now(), // 简单模拟ID生成
     booked: 0, // 新建号源预约数为0
+    amount: JSON.parse(config.data).amount || 50, // 默认费用50元，如果未提供则使用默认值
   };
 
   // 根据departmentId获取科室名称

@@ -14,6 +14,7 @@ import PaymentPage from './pages/admin/PaymentPage';
 // Patient pages
 import ProfilePage from './pages/patient/ProfilePage';
 import RegistrationPage from './pages/patient/RegistrationPage';
+import RegistrationHistoryPage from './pages/patient/RegistrationHistoryPage';
 
 import './App.css';
 
@@ -47,6 +48,7 @@ const App = () => {
               <Route index element={<ProfilePage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="registration" element={<RegistrationPage />} />
+              <Route path="history" element={<RegistrationHistoryPage />} />
             </Route>
 
             {/* 默认重定向到登录页 */}

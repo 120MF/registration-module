@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Select, DatePicker, Button, Table, message, Card, Space } from 'antd';
+import { Form, Select, DatePicker, Button, Table, message, Card, Space, Typography } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { patientAPI, departmentAPI } from '../../services/api';
-import { Department, Scheduling } from '../../types';
+import { patientAPI, departmentAPI, paymentAPI } from '../../services/api';
+import { Department, Scheduling, Payment } from '../../types';
+const { Text, Title } = Typography;
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -17,6 +18,7 @@ const RegistrationPage: React.FC = () => {
   const [schedules, setSchedules] = useState<Scheduling[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
+  const [selectedScheduleAmount, setSelectedScheduleAmount] = useState<number>(0);
 
   // 获取科室列表
   const fetchDepartments = async () => {
@@ -56,23 +58,39 @@ const RegistrationPage: React.FC = () => {
     }
   };
 
-  // 提交挂号
-  const handleSubmit = async (values: { doctorId: number; scheduleId: number }) => {
+  // 提交挂号和缴费
+  const handleSubmit = async (values: { doctorId: number; scheduleId: number; paymentMethod: string }) => {
     setSubmitting(true);
     try {
-      await patientAPI.createRegistration({
+      // 首先创建挂号
+      const registration = await patientAPI.createRegistration({
         departmentId: selectedDepartment,
         doctorId: values.doctorId,
         scheduleId: values.scheduleId,
         patientName: '张三', // 从用户档案获取
         status: 'pending'
       });
-      message.success('挂号成功');
+
+      // 获取当前选中的号源信息以获取费用
+      const selectedSchedule = schedules.find(s => s.id === values.scheduleId);
+      const amount = selectedSchedule?.amount || 0;
+
+      // 创建缴费记录
+      await paymentAPI.createPayment({
+        registrationId: registration.id,
+        patientName: '张三', // 从用户档案获取
+        amount: amount,
+        paymentMethod: values.paymentMethod,
+        status: 'paid',
+        createTime: new Date().toISOString(),
+      });
+
+      message.success('挂号及缴费成功');
       form.resetFields();
       setSchedules([]);
       setSelectedDoctor(null);
     } catch (error) {
-      message.error('挂号失败');
+      message.error('挂号或缴费失败');
     } finally {
       setSubmitting(false);
     }
@@ -200,32 +218,62 @@ const RegistrationPage: React.FC = () => {
             label="选择号源"
             rules={[{ required: true, message: '请选择号源' }]}
           >
-            <Select 
-              placeholder="请选择号源日期" 
+            <Select
+              placeholder="请选择号源日期"
               disabled={!selectedDoctor}
+              onChange={(value) => {
+                const selectedSchedule = schedules.find(s => s.id === value);
+                if (selectedSchedule) {
+                  setSelectedScheduleAmount(selectedSchedule.amount);
+                }
+              }}
             >
               {schedules.map(schedule => (
-                <Option 
-                  key={schedule.id} 
+                <Option
+                  key={schedule.id}
                   value={schedule.id}
                   disabled={schedule.booked >= schedule.maxPatients}
                 >
-                  {dayjs(schedule.date).format('YYYY-MM-DD')} 
+                  {dayjs(schedule.date).format('YYYY-MM-DD')}
                   (剩余{schedule.maxPatients - schedule.booked}个号源)
+                  {schedule.amount && ` - ¥${schedule.amount.toFixed(2)}`}
                 </Option>
               ))}
             </Select>
           </Form.Item>
 
+          {/* 显示选中的号源费用 */}
+          {selectedScheduleAmount > 0 && (
+            <Card size="small" style={{ marginBottom: '16px' }}>
+              <Text strong>挂号费用: ¥{selectedScheduleAmount.toFixed(2)}</Text>
+            </Card>
+          )}
+
+          <Form.Item
+            name="paymentMethod"
+            label="选择缴费方式"
+            rules={[{ required: true, message: '请选择缴费方式' }]}
+          >
+            <Select
+              placeholder="请选择缴费方式"
+              disabled={!form.getFieldValue('scheduleId')}
+            >
+              <Option value="cash">现金</Option>
+              <Option value="card">银行卡</Option>
+              <Option value="wechat">微信支付</Option>
+              <Option value="alipay">支付宝</Option>
+            </Select>
+          </Form.Item>
+
           <Form.Item>
             <Space>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={submitting}
-                disabled={!form.getFieldValue('scheduleId')}
+                disabled={!form.getFieldValue('scheduleId') || !form.getFieldValue('paymentMethod')}
               >
-                确认挂号
+                确认挂号并缴费
               </Button>
               <Button onClick={() => form.resetFields()}>
                 重置

@@ -38,6 +38,7 @@ export interface Scheduling {
   maxPatients: number;
   booked: number;
   status: number; // 1: 启用, 0: 停用
+  amount: number; // 挂号费用
 }
 
 // 挂号类型定义
