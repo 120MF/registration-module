@@ -1,6 +1,6 @@
 import MockAdapter from 'axios-mock-adapter';
 import request from '../services/request';
-import { Scheduling, Department, Staff, PatientProfile, Registration } from '../types';
+import { Scheduling, Department, Staff, PatientProfile, Registration, Payment } from '../types';
 
 const mock = new MockAdapter(request, { delayResponse: 500 });
 
@@ -131,15 +131,83 @@ mock.onGet('/patients/profile').reply(200, {
     gender: '男',
     birthDate: '1990-05-15',
     phone: '13800138000',
+    idCard: '110101199003071234',
     isInsurance: true,
-    allergies: '青霉素过敏',
-    medicalHistory: '高血压病史',
   } as PatientProfile,
 });
 
 mock.onPut('/patients/profile').reply((config) => {
   const profile = JSON.parse(config.data);
   return [200, { success: true, data: { ...profile, id: 1 } }];
+});
+
+// 患者管理相关接口
+mock.onGet('/patients').reply(200, {
+  success: true,
+  data: [
+    {
+      id: 1,
+      name: '张三',
+      gender: '男',
+      birthDate: '1990-05-15',
+      phone: '13800138000',
+      idCard: '110101199003071234',
+      isInsurance: true,
+    },
+    {
+      id: 2,
+      name: '李四',
+      gender: '女',
+      birthDate: '1985-08-22',
+      phone: '13900139000',
+      idCard: '220202198508225678',
+      isInsurance: false,
+    },
+    {
+      id: 3,
+      name: '王五',
+      gender: '男',
+      birthDate: '1978-12-10',
+      phone: '13700137000',
+      idCard: '330303197812109012',
+      isInsurance: true,
+    },
+  ] as PatientProfile[],
+});
+
+mock.onGet(/\/patients\/\d+/).reply((config) => {
+  const url = config.url;
+  const id = Number(url?.split('/').pop());
+  const patient = {
+    id: id,
+    name: id === 1 ? '张三' : id === 2 ? '李四' : '王五',
+    gender: id === 2 ? '女' : '男',
+    birthDate: id === 1 ? '1990-05-15' : id === 2 ? '1985-08-22' : '1978-12-10',
+    phone: id === 1 ? '13800138000' : id === 2 ? '13900139000' : '13700137000',
+    idCard: id === 1 ? '110101199003071234' : id === 2 ? '220202198508225678' : '330303197812109012',
+    isInsurance: id === 2 ? false : true,
+  };
+  return [200, { success: true, data: patient as PatientProfile }];
+});
+
+mock.onPost('/patients').reply((config) => {
+  const newPatient = JSON.parse(config.data);
+  newPatient.id = Date.now(); // 简单模拟ID生成
+  return [200, { success: true, data: newPatient }];
+});
+
+mock.onPut(/\/patients\/\d+/).reply((config) => {
+  const url = config.url;
+  const id = Number(url?.split('/').pop());
+  const updatedPatient = JSON.parse(config.data);
+  updatedPatient.id = Number(id);
+  return [200, { success: true, data: updatedPatient }];
+});
+
+mock.onDelete(/\/patients\/\d+/).reply((config) => {
+  const url = config.url;
+  const id = Number(url?.split('/').pop());
+  return [200, { success: true, message: `患者${id}删除成功` }];
 });
 
 
@@ -353,6 +421,117 @@ mock.onGet(/\/departments\/\d+\/doctors/).reply((config) => {
   const filteredDoctors = doctors.filter(doctor => doctor.departmentId === departmentId);
 
   return [200, { success: true, data: filteredDoctors }];
+});
+
+// 缴费管理相关接口
+let paymentData: Payment[] = [
+  {
+    id: 'PAY001',
+    registrationId: 'GH1700000000000',
+    patientName: '张三',
+    amount: 50,
+    paymentMethod: 'wechat',
+    status: 'paid',
+    createTime: '2025-05-25T10:30:00Z',
+  },
+  {
+    id: 'PAY002',
+    registrationId: 'GH1700000000001',
+    patientName: '李四',
+    amount: 45,
+    paymentMethod: 'card',
+    status: 'paid',
+    createTime: '2025-05-25T11:15:00Z',
+  },
+  {
+    id: 'PAY003',
+    registrationId: 'GH1700000000002',
+    patientName: '王五',
+    amount: 60,
+    paymentMethod: 'cash',
+    status: 'refunded',
+    createTime: '2025-05-24T09:20:00Z',
+    refundTime: '2025-05-24T15:30:00Z',
+    refundReason: '医生停诊',
+  },
+  {
+    id: 'PAY004',
+    registrationId: 'GH1700000000003',
+    patientName: '赵六',
+    amount: 55,
+    paymentMethod: 'alipay',
+    status: 'paid',
+    createTime: '2025-05-26T08:45:00Z',
+  },
+];
+
+mock.onGet('/payments').reply(200, {
+  success: true,
+  data: paymentData,
+});
+
+mock.onGet(/\/payments\/\w+/).reply((config) => {
+  const url = config.url;
+  const id = url?.split('/').pop();
+  const payment = paymentData.find(p => p.id === id);
+
+  if (payment) {
+    return [200, { success: true, data: payment }];
+  } else {
+    return [404, { success: false, message: '缴费记录不存在' }];
+  }
+});
+
+mock.onPost('/payments').reply((config) => {
+  const newPayment: Payment = {
+    ...JSON.parse(config.data),
+    id: 'PAY' + Date.now(), // 简单模拟ID生成
+    status: 'paid', // 新缴费默认为已支付
+    createTime: new Date().toISOString(),
+  };
+
+  paymentData.push(newPayment);
+  return [200, { success: true, data: newPayment }];
+});
+
+mock.onPut(/\/payments\/\w+\/refund/).reply((config) => {
+  const url = config.url;
+  const id = url?.split('/')[2]; // 提取缴费ID
+  const { refundReason } = JSON.parse(config.data);
+
+  const paymentIndex = paymentData.findIndex(p => p.id === id);
+
+  if (paymentIndex !== -1) {
+    paymentData[paymentIndex] = {
+      ...paymentData[paymentIndex],
+      status: 'refunded',
+      refundTime: new Date().toISOString(),
+      refundReason: refundReason || '未知原因',
+    };
+
+    return [200, { success: true, data: paymentData[paymentIndex] }];
+  } else {
+    return [404, { success: false, message: '缴费记录不存在' }];
+  }
+});
+
+mock.onPut(/\/payments\/\w+/).reply((config) => {
+  const url = config.url;
+  const id = url?.split('/')[2]; // 提取缴费ID
+  const updateData = JSON.parse(config.data);
+
+  const paymentIndex = paymentData.findIndex(p => p.id === id);
+
+  if (paymentIndex !== -1) {
+    paymentData[paymentIndex] = {
+      ...paymentData[paymentIndex],
+      ...updateData,
+    };
+
+    return [200, { success: true, data: paymentData[paymentIndex] }];
+  } else {
+    return [404, { success: false, message: '缴费记录不存在' }];
+  }
 });
 
 // 兜底策略：未匹配的请求通过网络发送

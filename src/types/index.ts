@@ -22,9 +22,8 @@ export interface PatientProfile {
   gender: string;
   birthDate: string; // YYYY-MM-DD
   phone: string;
+  idCard: string; // 身份证号
   isInsurance: boolean;
-  allergies?: string;
-  medicalHistory?: string;
 }
 
 // 号源类型定义
@@ -50,4 +49,17 @@ export interface Registration {
   patientName: string;
   status: string;
   createTime?: string;
+}
+
+// 缴费类型定义
+export interface Payment {
+  id: string;
+  registrationId: string; // 关联的挂号ID
+  patientName: string;
+  amount: number; // 缴费金额
+  paymentMethod: string; // 缴费方式: cash, card, wechat, alipay 等
+  status: 'paid' | 'refunded' | 'pending'; // 支付状态
+  createTime: string; // 创建时间
+  refundTime?: string; // 退费时间（如果已退费）
+  refundReason?: string; // 退费原因
 }

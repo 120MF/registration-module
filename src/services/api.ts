@@ -6,6 +6,7 @@ import type {
   Registration,
   Scheduling,
   Staff,
+  Payment,
 } from '../types';
 import request from './request';
 
@@ -56,6 +57,23 @@ export const patientAPI = {
     request.post<Registration>('/registrations', data),
 };
 
+// 患者管理API
+export const patientManagementAPI = {
+  getPatients: () =>
+    request
+      .get<{ success: boolean; data: PatientProfile[] }>('/patients')
+      .then((res) => res.data),
+  getPatientById: (id: number) =>
+    request
+      .get<{ success: boolean; data: PatientProfile }>(`/patients/${id}`)
+      .then((res) => res.data),
+  createPatient: (data: Omit<PatientProfile, 'id'>) =>
+    request.post<PatientProfile>('/patients', data),
+  updatePatient: (id: number, data: Partial<PatientProfile>) =>
+    request.put<PatientProfile>(`/patients/${id}`, data),
+  deletePatient: (id: number) => request.delete(`/patients/${id}`),
+};
+
 // 管理员API
 export const adminAPI = {
   // 号源管理API
@@ -79,5 +97,24 @@ export const adminAPI = {
     request
       .get<{ success: boolean; data: Department[] }>('/departments')
       .then((res) => res.data),
+};
+
+// 缴费管理API
+export const paymentAPI = {
+  getPayments: () =>
+    request
+      .get<{ success: boolean; data: Payment[] }>('/payments')
+      .then((res) => res.data),
+  getPaymentById: (id: string) =>
+    request
+      .get<{ success: boolean; data: Payment }>(`/payments/${id}`)
+      .then((res) => res.data),
+  createPayment: (data: Omit<Payment, 'id'>) =>
+    request.post<Payment>('/payments', data),
+  updatePayment: (id: string, data: Partial<Payment>) =>
+    request.put<Payment>(`/payments/${id}`, data),
+  // 退费操作
+  refundPayment: (id: string, refundReason?: string) =>
+    request.put<Payment>(`/payments/${id}/refund`, { refundReason }),
 };
 
