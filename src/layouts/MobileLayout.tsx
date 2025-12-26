@@ -53,7 +53,7 @@ const MobileLayout: React.FC = () => {
     <Layout
       style={{
         minHeight: '100vh',
-        maxWidth: screens.md ? '400px' : '100%',
+        maxWidth: screens.md ? '500px' : '100%',
         margin: screens.md ? '0 auto' : '0',
         background: '#f5f5f5',
       }}

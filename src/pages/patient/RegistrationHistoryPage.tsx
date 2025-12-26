@@ -6,15 +6,17 @@ import {
   Input,
   List,
   Modal,
+  Table,
+  Tag,
   message,
   Space,
-  Tag,
 } from 'antd';
+import dayjs from 'dayjs';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { paymentAPI } from '../../services/api';
+import { paymentAPI, prescriptionAPI } from '../../services/api';
 import { usePatientStore } from '../../stores';
-import type { Payment, Registration } from '../../types';
+import type { Payment, Prescription, Registration } from '../../types';
 
 const { RangePicker } = DatePicker;
 
@@ -28,13 +30,22 @@ const RegistrationHistoryPage: React.FC = () => {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [refundReason, setRefundReason] = useState<string>('');
 
+  // 处方模态框状态
+  const [prescriptionModalVisible, setPrescriptionModalVisible] =
+    useState<boolean>(false);
+  const [selectedPrescriptions, setSelectedPrescriptions] = useState<
+    Prescription[]
+  >([]);
+  const [selectedRegistrationId, setSelectedRegistrationId] =
+    useState<string>('');
+  const [prescriptionLoading, setPrescriptionLoading] = useState<boolean>(false);
+
   const { profile, fetchProfile } = usePatientStore();
 
   const loadPayments = async () => {
     try {
       setLoading(true);
 
-      // 确保有患者档案
       if (!profile) {
         await fetchProfile();
       }
@@ -113,6 +124,62 @@ const RegistrationHistoryPage: React.FC = () => {
     }
   };
 
+  // 查看处方记录
+  const handleViewPrescriptions = async (registrationId: string) => {
+    setPrescriptionLoading(true);
+    setSelectedRegistrationId(registrationId);
+    try {
+      const allPrescriptions = await prescriptionAPI.getPrescriptions();
+      const regPrescriptions = allPrescriptions.filter(
+        (p) => p.reg_id === registrationId,
+      );
+      setSelectedPrescriptions(regPrescriptions);
+      setPrescriptionModalVisible(true);
+    } catch {
+      message.error('获取处方记录失败');
+    } finally {
+      setPrescriptionLoading(false);
+    }
+  };
+
+  const prescriptionColumns = [
+    {
+      title: '处方ID',
+      dataIndex: 'prescription_id',
+      key: 'prescription_id',
+      width: 120,
+    },
+    {
+      title: '开具日期',
+      dataIndex: 'prescription_date',
+      key: 'prescription_date',
+      render: (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: '症状',
+      dataIndex: 'symptoms',
+      key: 'symptoms',
+    },
+    {
+      title: '诊断',
+      dataIndex: 'diagnosis',
+      key: 'diagnosis',
+    },
+    {
+      title: '状态',
+      dataIndex: 'prescription_status',
+      key: 'prescription_status',
+      render: (status: number) => {
+        const statusMap = {
+          1: <Tag color="green">有效</Tag>,
+          0: <Tag color="red">作废</Tag>,
+          2: <Tag color="blue">已归档</Tag>,
+        };
+        return statusMap[status as keyof typeof statusMap] || '未知';
+      },
+    },
+  ];
+
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
@@ -150,7 +217,13 @@ const RegistrationHistoryPage: React.FC = () => {
           return (
             <List.Item>
               <Card
-                style={{ width: '100%' }}
+                style={{
+                  width: '100%',
+                  cursor: 'pointer',
+                  transition: 'box-shadow 0.3s',
+                }}
+                hoverable
+                onClick={() => handleViewPrescriptions(registration.id)}
                 title={
                   <div
                     style={{
@@ -227,7 +300,8 @@ const RegistrationHistoryPage: React.FC = () => {
                           type="primary"
                           danger
                           icon={<CloseCircleOutlined />}
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedPayment(payment);
                             setRefundModalVisible(true);
                           }}
@@ -238,12 +312,18 @@ const RegistrationHistoryPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+                <div style={{ marginTop: 12, textAlign: 'center' }}>
+                  <span style={{ color: '#999', fontSize: '12px' }}>
+                    点击卡片查看处方记录
+                  </span>
+                </div>
               </Card>
             </List.Item>
           );
         }}
       />
 
+      {/* 退费确认弹窗 */}
       <Modal
         title="退费确认"
         open={refundModalVisible}
@@ -267,6 +347,55 @@ const RegistrationHistoryPage: React.FC = () => {
             placeholder="请输入退费原因"
           />
         </div>
+      </Modal>
+
+      {/* 处方记录弹窗 */}
+      <Modal
+        title={`挂号 ${selectedRegistrationId} 的处方记录`}
+        open={prescriptionModalVisible}
+        onCancel={() => setPrescriptionModalVisible(false)}
+        width={1000}
+        footer={[
+          <Button
+            key="close"
+            onClick={() => setPrescriptionModalVisible(false)}
+          >
+            关闭
+          </Button>,
+        ]}
+      >
+        {selectedPrescriptions.length > 0 ? (
+          <Table
+            columns={prescriptionColumns}
+            dataSource={selectedPrescriptions}
+            rowKey="prescription_id"
+            loading={prescriptionLoading}
+            pagination={false}
+            size="small"
+            scroll={{ x: 800 }}
+            expandable={{
+              expandedRowRender: (record: Prescription) => (
+                <div style={{ padding: '16px 0' }}>
+                  <p>
+                    <strong>备注：</strong> {record.remark || '暂无备注'}
+                  </p>
+                  <p>
+                    <strong>创建时间：</strong>{' '}
+                    {dayjs(record.create_time).format('YYYY-MM-DD HH:mm:ss')}
+                  </p>
+                  <p>
+                    <strong>更新时间：</strong>{' '}
+                    {dayjs(record.update_time).format('YYYY-MM-DD HH:mm:ss')}
+                  </p>
+                </div>
+              ),
+            }}
+          />
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <p>暂无处方记录</p>
+          </div>
+        )}
       </Modal>
     </div>
   );
