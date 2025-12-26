@@ -2,12 +2,16 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { loginAPI } from '../services/api';
 
-export type UserRole = 'admin' | 'patient';
+export type UserRole = 'admin' | 'patient' | 'doctor';
 
 export interface User {
   id: string;
   username: string;
   role: UserRole;
+  // 医生角色专属字段
+  staffId?: number;
+  departmentId?: number;
+  position?: string;
 }
 
 interface AuthState {
@@ -15,7 +19,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string) => Promise<boolean>;
   logout: () => void;
   hasRole: (role: UserRole) => boolean;
 }
@@ -28,11 +32,11 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       loading: false,
 
-      login: async (username: string, password: string) => {
+      login: async (username: string) => {
         set({ loading: true });
         try {
-          // 调用登录API
-          const response = await loginAPI.login({ username, password });
+          // 调用登录API，只需要用户名
+          const response = await loginAPI.login({ username, password: '' });
           const { token, user } = response.data as {
             token: string;
             user: User;

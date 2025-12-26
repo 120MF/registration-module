@@ -16,6 +16,7 @@ const mock = new MockAdapter(request, { delayResponse: 500 });
 mock.onPost('/login').reply((config) => {
   const { username } = JSON.parse(config.data);
 
+  // 管理员账户
   if (username === 'admin') {
     return [
       200,
@@ -31,7 +32,10 @@ mock.onPost('/login').reply((config) => {
         },
       },
     ];
-  } else if (username === 'patient') {
+  }
+
+  // 通用患者账户
+  if (username === 'patient') {
     return [
       200,
       {
@@ -46,9 +50,61 @@ mock.onPost('/login').reply((config) => {
         },
       },
     ];
-  } else {
-    return [401, { success: false, message: '用户名不存在' }];
   }
+
+  // 医生姓名登录（张医生、刘医生）
+  const doctorMap: Record<string, { id: number; name: string; departmentId: number; position: string }> = {
+    '张医生': { id: 1, name: '张医生', departmentId: 101, position: '主任医师' },
+    '刘医生': { id: 4, name: '刘医生', departmentId: 102, position: '副主任医师' },
+  };
+
+  if (doctorMap[username]) {
+    const doctor = doctorMap[username];
+    return [
+      200,
+      {
+        success: true,
+        data: {
+          token: `mock-token-doctor-${doctor.id}`,
+          user: {
+            id: `doctor-${doctor.id}`,
+            username: doctor.name,
+            role: 'doctor',
+            staffId: doctor.id,
+            departmentId: doctor.departmentId,
+            position: doctor.position,
+          },
+        },
+      },
+    ];
+  }
+
+  // 患者名字登录（张三、李四、王五）
+  const patientMap: Record<string, { id: string; name: string }> = {
+    '张三': { id: 'patient-001', name: '张三' },
+    '李四': { id: 'patient-002', name: '李四' },
+    '王五': { id: 'patient-003', name: '王五' },
+  };
+
+  if (patientMap[username]) {
+    const patient = patientMap[username];
+    return [
+      200,
+      {
+        success: true,
+        data: {
+          token: `mock-token-${patient.id}`,
+          user: {
+            id: patient.id,
+            username: patient.name,
+            role: 'patient',
+          },
+        },
+      },
+    ];
+  }
+
+  return [401, { success: false, message: '用户名不存在' }];
 });
 
 // 科室管理相关接口
@@ -692,6 +748,69 @@ mock.onDelete(/\/prescriptions\/\w+/).reply((config) => {
   } else {
     return [404, { success: false, message: '处方记录不存在' }];
   }
+});
+
+// 医生今日挂号单API
+mock.onGet(/\/doctors\/\d+\/registrations\/today/).reply((config) => {
+  const url = config.url;
+  const doctorId = Number(url?.split('/')[2]); // 提取URL中的医生ID
+  const today = new Date().toISOString().split('T')[0]; // 获取今日日期 YYYY-MM-DD
+
+  // 模拟今日挂号单数据
+  const registrationsData: (Registration & {
+    patientId: number;
+    scheduleDate: string;
+  })[] = [
+    {
+      id: 'GH1700000000001',
+      departmentId: 101,
+      doctorId: 1,
+      scheduleId: 1,
+      patientName: '张三',
+      patientId: 1,
+      status: 'confirmed',
+      createTime: `${today}T09:15:00Z`,
+      scheduleDate: today,
+    },
+    {
+      id: 'GH1700000000002',
+      departmentId: 101,
+      doctorId: 1,
+      scheduleId: 1,
+      patientName: '李四',
+      patientId: 2,
+      status: 'confirmed',
+      createTime: `${today}T10:30:00Z`,
+      scheduleDate: today,
+    },
+    {
+      id: 'GH1700000000003',
+      departmentId: 102,
+      doctorId: 4,
+      scheduleId: 3,
+      patientName: '王五',
+      patientId: 3,
+      status: 'confirmed',
+      createTime: `${today}T11:00:00Z`,
+      scheduleDate: today,
+    },
+  ];
+
+  // 过滤当前医生的今日挂号单
+  const doctorRegistrations = registrationsData
+    .filter((reg) => reg.doctorId === doctorId && reg.scheduleDate === today)
+    .map((reg) => ({
+      ...reg,
+      hasPrescription: prescriptionData.some((p) => p.reg_id === reg.id),
+    }));
+
+  return [
+    200,
+    {
+      success: true,
+      data: doctorRegistrations,
+    },
+  ];
 });
 
 // 兜底策略：未匹配的请求通过网络发送

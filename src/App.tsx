@@ -1,6 +1,7 @@
 import { App as AntdApp, ConfigProvider } from 'antd';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
+import DoctorLayout from './layouts/DoctorLayout';
 import MobileLayout from './layouts/MobileLayout';
 // Admin pages
 import DepartmentPage from './pages/admin/DepartmentPage';
@@ -10,6 +11,9 @@ import PrescriptionPage from './pages/admin/PrescriptionPage';
 import SchedulingPage from './pages/admin/SchedulingPage';
 import StaffPage from './pages/admin/StaffPage';
 import LoginPage from './pages/login/LoginPage';
+
+// Doctor pages
+import AppointmentsPage from './pages/doctor/AppointmentsPage';
 
 // Patient pages
 import ProfilePage from './pages/patient/ProfilePage';
@@ -42,6 +46,12 @@ const App = () => {
               <Route path="patients" element={<PatientManagementPage />} />
               <Route path="payments" element={<PaymentPage />} />
               <Route path="prescriptions" element={<PrescriptionPage />} />
+            </Route>
+
+            {/* 医生子系统 */}
+            <Route path="/doctor/*" element={<DoctorLayout />}>
+              <Route index element={<AppointmentsPage />} />
+              <Route path="appointments" element={<AppointmentsPage />} />
             </Route>
 
             {/* 患者移动端子系统 */}

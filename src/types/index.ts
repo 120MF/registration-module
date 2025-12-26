@@ -48,8 +48,18 @@ export interface Registration {
   doctorId: number;
   scheduleId: number;
   patientName: string;
+  patientId?: number;
   status: string;
   createTime?: string;
+  scheduleDate?: string;
+  hasPrescription?: boolean;
+}
+
+// 医生视图的挂号类型
+export interface DoctorRegistration extends Registration {
+  patientId: number;
+  scheduleDate: string;
+  hasPrescription: boolean;
 }
 
 // 缴费类型定义

@@ -2,6 +2,7 @@
 
 import type {
   Department,
+  DoctorRegistration,
   PatientProfile,
   Payment,
   Prescription,
@@ -132,4 +133,14 @@ export const prescriptionAPI = {
   updatePrescription: (id: string, data: Partial<Prescription>) =>
     request.put<Prescription>(`/prescriptions/${id}`, data),
   deletePrescription: (id: string) => request.delete(`/prescriptions/${id}`),
+};
+
+// 医生管理API
+export const doctorAPI = {
+  getTodayRegistrations: (doctorId: number) =>
+    request
+      .get<{ success: boolean; data: DoctorRegistration[] }>(
+        `/doctors/${doctorId}/registrations/today`
+      )
+      .then((res) => res.data),
 };
