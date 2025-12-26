@@ -1,8 +1,14 @@
-import React from 'react';
-import { Layout, Menu, Typography, Grid } from 'antd';
-import { AppstoreOutlined, UserOutlined, HistoryOutlined, SettingOutlined } from '@ant-design/icons';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import {
+  AppstoreOutlined,
+  HistoryOutlined,
+  LogoutOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
 import type { MenuProps } from 'antd';
+import { Button, Grid, Layout, Menu, Typography } from 'antd';
+import type React from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuthStore, usePatientStore } from '../stores';
 
 const { Header, Content, Footer } = Layout;
 const { useBreakpoint } = Grid;
@@ -10,8 +16,17 @@ const { Title } = Typography;
 
 const MobileLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const screens = useBreakpoint();
-  
+  const { logout } = useAuthStore();
+  const { clearProfile } = usePatientStore();
+
+  const handleLogout = () => {
+    clearProfile();
+    logout();
+    navigate('/login');
+  };
+
   const menuItems: MenuProps['items'] = [
     {
       key: '/patient/profile',
@@ -30,23 +45,39 @@ const MobileLayout: React.FC = () => {
     },
   ];
 
-  // Determine active key based on current path
-  const currentKey = menuItems?.find(item => location.pathname.startsWith(item?.key || ''))?.key || '/patient/profile';
+  const currentKey =
+    menuItems?.find((item) => location.pathname.startsWith(item?.key || ''))
+      ?.key || '/patient/profile';
 
   return (
-    <Layout style={{ 
-      minHeight: '100vh',
-      maxWidth: screens.md ? '400px' : '100%', 
-      margin: screens.md ? '0 auto' : '0',
-      background: '#f5f5f5'
-    }}>
-      <Header style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        backgroundColor: '#1890ff',
-        padding: '0 20px'
-      }}>
-        <Title level={4} style={{ color: 'white', margin: 0, flex: 1 }}>患者服务</Title>
+    <Layout
+      style={{
+        minHeight: '100vh',
+        maxWidth: screens.md ? '400px' : '100%',
+        margin: screens.md ? '0 auto' : '0',
+        background: '#f5f5f5',
+      }}
+    >
+      <Header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: '#1890ff',
+          padding: '0 20px',
+        }}
+      >
+        <Title level={4} style={{ color: 'white', margin: 0 }}>
+          患者服务
+        </Title>
+        <Button
+          type="text"
+          icon={<LogoutOutlined />}
+          onClick={handleLogout}
+          style={{ color: 'white' }}
+        >
+          退出
+        </Button>
       </Header>
       <Content
         style={{
@@ -64,12 +95,12 @@ const MobileLayout: React.FC = () => {
           style={{
             display: 'flex',
             borderTop: '1px solid #e8e8e8',
-            background: '#fff'
+            background: '#fff',
           }}
-          items={menuItems.map(item => ({
+          items={menuItems.map((item) => ({
             ...item,
-            style: { flex: 1, textAlign: 'center' }, // Make each tab equal width
-            label: <Link to={item.key as string}>{item.label}</Link>
+            style: { flex: 1, textAlign: 'center' },
+            label: <Link to={item.key as string}>{item.label}</Link>,
           }))}
         />
       </Footer>

@@ -1,80 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Tag, Space, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { departmentAPI } from '../../services/api';
-import { Department } from '../../types';
+import { Button, Form, Input, Modal, message, Space, Table, Tag } from 'antd';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { useDepartmentStore } from '../../stores';
+import type { Department } from '../../types';
 
 const { TextArea } = Input;
 
 const DepartmentPage: React.FC = () => {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(false);
+  const {
+    departments,
+    loading,
+    fetchDepartments,
+    addDepartment,
+    updateDepartment,
+    deleteDepartment,
+  } = useDepartmentStore();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [form] = Form.useForm();
 
-  // 获取科室列表
-  const fetchDepartments = async () => {
-    setLoading(true);
-    try {
-      const response = await departmentAPI.getDepartments();
-      setDepartments(response || []);
-    } catch (error) {
-      message.error('获取科室列表失败');
-      setDepartments([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchDepartments();
-  }, []);
+    fetchDepartments(true); // 强制刷新，因为这是管理页面
+  }, [fetchDepartments]);
 
-  // 打开新增/编辑弹窗
   const showModal = (record?: Department) => {
     setEditingDept(record || null);
     form.setFieldsValue({
       name: record?.name || '',
       desc: record?.desc || '',
-      status: record?.status || 1,
+      status: record?.status === 1,
     });
     setModalVisible(true);
   };
 
-  // 提交表单
-  const handleSubmit = async (values: Omit<Department, 'id'>) => {
+  const handleSubmit = async (values: {
+    name: string;
+    desc?: string;
+    status: boolean;
+  }) => {
     try {
+      const data = {
+        name: values.name,
+        desc: values.desc,
+        status: values.status ? 1 : 0,
+      };
+
       if (editingDept) {
-        // 编辑
-        await departmentAPI.updateDepartment(editingDept.id, {
-          ...values,
-          status: values.status ? 1 : 0
-        } as Partial<Department>);
+        await updateDepartment(editingDept.id, data);
         message.success('更新科室成功');
       } else {
-        // 新增
-        await departmentAPI.createDepartment({
-          ...values,
-          status: values.status ? 1 : 0
-        } as Omit<Department, 'id'>);
+        await addDepartment(data);
         message.success('新增科室成功');
       }
       setModalVisible(false);
       form.resetFields();
-      fetchDepartments(); // 重新获取列表
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
 
-  // 删除科室
   const handleDelete = async (id: number) => {
     try {
-      await departmentAPI.deleteDepartment(id);
+      await deleteDepartment(id);
       message.success('删除科室成功');
-      fetchDepartments(); // 重新获取列表
-    } catch (error) {
+    } catch {
       message.error('删除科室失败');
     }
   };
@@ -83,7 +74,7 @@ const DepartmentPage: React.FC = () => {
     {
       title: '序号',
       key: 'index',
-      render: (text: any, record: Department, index: number) => index + 1,
+      render: (_: unknown, __: Department, index: number) => index + 1,
     },
     {
       title: '科室名称',
@@ -98,7 +89,7 @@ const DepartmentPage: React.FC = () => {
     {
       title: '是否有效',
       key: 'status',
-      render: (text: any, record: Department) => (
+      render: (_: unknown, record: Department) => (
         <Tag color={record.status === 1 ? 'green' : 'red'}>
           {record.status === 1 ? '有效' : '无效'}
         </Tag>
@@ -107,10 +98,14 @@ const DepartmentPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      render: (text: any, record: Department) => (
+      render: (_: unknown, record: Department) => (
         <Space size="middle">
-          <Button type="link" onClick={() => showModal(record)}>编辑</Button>
-          <Button type="link" danger onClick={() => handleDelete(record.id)}>删除</Button>
+          <Button type="link" onClick={() => showModal(record)}>
+            编辑
+          </Button>
+          <Button type="link" danger onClick={() => handleDelete(record.id)}>
+            删除
+          </Button>
         </Space>
       ),
     },
@@ -119,34 +114,29 @@ const DepartmentPage: React.FC = () => {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <Button 
-          type="primary" 
-          icon={<PlusOutlined />} 
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
           onClick={() => showModal()}
         >
           新增科室
         </Button>
       </div>
-      
-      <Table 
-        columns={columns} 
-        dataSource={departments} 
+
+      <Table
+        columns={columns}
+        dataSource={departments}
         rowKey="id"
         loading={loading}
       />
-      
-      {/* 新增/编辑弹窗 */}
+
       <Modal
         title={editingDept ? '编辑科室' : '新增科室'}
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         onOk={() => form.submit()}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="name"
             label="科室名称"
@@ -154,19 +144,12 @@ const DepartmentPage: React.FC = () => {
           >
             <Input />
           </Form.Item>
-          
-          <Form.Item
-            name="desc"
-            label="科室描述"
-          >
+
+          <Form.Item name="desc" label="科室描述">
             <TextArea rows={4} />
           </Form.Item>
-          
-          <Form.Item
-            name="status"
-            label="是否有效"
-            valuePropName="checked"
-          >
+
+          <Form.Item name="status" label="是否有效" valuePropName="checked">
             <Input type="checkbox" />
           </Form.Item>
         </Form>

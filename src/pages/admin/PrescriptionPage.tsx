@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Form, Input, Tag, Space, message, Select } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
+import {
+  Button,
+  Form,
+  Input,
+  Modal,
+  message,
+  Select,
+  Space,
+  Table,
+  Tag,
+} from 'antd';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { prescriptionAPI } from '../../services/api';
-import { Prescription } from '../../types';
+import type { Prescription } from '../../types';
 
 const { TextArea } = Input;
 
@@ -10,7 +21,8 @@ const PrescriptionPage: React.FC = () => {
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editingPrescription, setEditingPrescription] = useState<Prescription | null>(null);
+  const [editingPrescription, setEditingPrescription] =
+    useState<Prescription | null>(null);
   const [form] = Form.useForm();
 
   // 获取处方列表
@@ -47,21 +59,26 @@ const PrescriptionPage: React.FC = () => {
   };
 
   // 提交表单
-  const handleSubmit = async (values: Omit<Prescription, 'prescription_id'>) => {
+  const handleSubmit = async (
+    values: Omit<Prescription, 'prescription_id'>,
+  ) => {
     try {
       if (editingPrescription) {
         // 编辑
-        await prescriptionAPI.updatePrescription(editingPrescription.prescription_id, {
-          ...values,
-          prescription_status: values.prescription_status
-        } as Partial<Prescription>);
+        await prescriptionAPI.updatePrescription(
+          editingPrescription.prescription_id,
+          {
+            ...values,
+            prescription_status: values.prescription_status,
+          } as Partial<Prescription>,
+        );
         message.success('更新处方成功');
       } else {
         // 新增
         await prescriptionAPI.createPrescription({
           ...values,
           prescription_status: values.prescription_status,
-          prescription_date: new Date().toISOString()
+          prescription_date: new Date().toISOString(),
         } as Omit<Prescription, 'prescription_id'>);
         message.success('新增处方成功');
       }
@@ -123,7 +140,8 @@ const PrescriptionPage: React.FC = () => {
           1: { text: '有效', color: 'green' },
           2: { text: '已归档', color: 'blue' },
         };
-        const status = statusMap[record.prescription_status as keyof typeof statusMap];
+        const status =
+          statusMap[record.prescription_status as keyof typeof statusMap];
         return <Tag color={status.color}>{status.text}</Tag>;
       },
     },
@@ -142,8 +160,16 @@ const PrescriptionPage: React.FC = () => {
       key: 'action',
       render: (text: any, record: Prescription) => (
         <Space size="middle">
-          <Button type="link" onClick={() => showModal(record)}>编辑</Button>
-          <Button type="link" danger onClick={() => handleDelete(record.prescription_id)}>删除</Button>
+          <Button type="link" onClick={() => showModal(record)}>
+            编辑
+          </Button>
+          <Button
+            type="link"
+            danger
+            onClick={() => handleDelete(record.prescription_id)}
+          >
+            删除
+          </Button>
         </Space>
       ),
     },
@@ -177,11 +203,7 @@ const PrescriptionPage: React.FC = () => {
         onOk={() => form.submit()}
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="reg_id"
             label="挂号ID"
@@ -234,10 +256,7 @@ const PrescriptionPage: React.FC = () => {
             <TextArea rows={3} placeholder="请输入诊断" />
           </Form.Item>
 
-          <Form.Item
-            name="remark"
-            label="备注"
-          >
+          <Form.Item name="remark" label="备注">
             <TextArea rows={3} placeholder="请输入备注" />
           </Form.Item>
         </Form>

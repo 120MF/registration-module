@@ -1,8 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Modal, Input, Space, Tag, message, DatePicker } from 'antd';
-import { SearchOutlined, EditOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import type { Payment } from '../../types';
+import {
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  EditOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
+import {
+  Button,
+  DatePicker,
+  Input,
+  Modal,
+  message,
+  Space,
+  Table,
+  Tag,
+} from 'antd';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { paymentAPI } from '../../services/api';
+import type { Payment } from '../../types';
 
 const { RangePicker } = DatePicker;
 
@@ -34,16 +49,19 @@ const PaymentPage: React.FC = () => {
   }, []);
 
   // 过滤数据
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.patientName.toLowerCase().includes(searchText.toLowerCase()) ||
-                          payment.registrationId.toLowerCase().includes(searchText.toLowerCase());
-    
+  const filteredPayments = payments.filter((payment) => {
+    const matchesSearch =
+      payment.patientName.toLowerCase().includes(searchText.toLowerCase()) ||
+      payment.registrationId.toLowerCase().includes(searchText.toLowerCase());
+
     if (dateRange) {
-      const paymentDate = new Date(payment.createTime).toISOString().split('T')[0];
+      const paymentDate = new Date(payment.createTime)
+        .toISOString()
+        .split('T')[0];
       const [start, end] = dateRange;
       return paymentDate >= start && paymentDate <= end;
     }
-    
+
     return matchesSearch;
   });
 
@@ -124,7 +142,8 @@ const PaymentPage: React.FC = () => {
       title: '退费时间',
       dataIndex: 'refundTime',
       key: 'refundTime',
-      render: (time: string) => time ? new Date(time).toLocaleString('zh-CN') : '-',
+      render: (time: string) =>
+        time ? new Date(time).toLocaleString('zh-CN') : '-',
     },
     {
       title: '操作',
@@ -132,8 +151,8 @@ const PaymentPage: React.FC = () => {
       render: (_: any, record: Payment) => (
         <Space size="middle">
           {record.status === 'paid' && (
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               danger
               icon={<CloseCircleOutlined />}
               onClick={() => {
@@ -168,7 +187,7 @@ const PaymentPage: React.FC = () => {
               if (dates && dates[0] && dates[1]) {
                 setDateRange([
                   dates[0].format('YYYY-MM-DD'),
-                  dates[1].format('YYYY-MM-DD')
+                  dates[1].format('YYYY-MM-DD'),
                 ]);
               } else {
                 setDateRange(null);
@@ -179,16 +198,16 @@ const PaymentPage: React.FC = () => {
         </Space>
       </div>
 
-      <Table 
-        columns={columns} 
-        dataSource={filteredPayments} 
+      <Table
+        columns={columns}
+        dataSource={filteredPayments}
         rowKey="id"
         loading={loading}
-        pagination={{ 
+        pagination={{
           pageSize: 10,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条记录`
+          showTotal: (total) => `共 ${total} 条记录`,
         }}
       />
 
@@ -202,7 +221,10 @@ const PaymentPage: React.FC = () => {
           setRefundReason('');
         }}
       >
-        <p>您确定要为患者 <strong>{selectedPayment?.patientName}</strong> 退费吗？</p>
+        <p>
+          您确定要为患者 <strong>{selectedPayment?.patientName}</strong>{' '}
+          退费吗？
+        </p>
         <p>缴费金额：¥{selectedPayment?.amount?.toFixed(2)}</p>
         <p>挂号ID：{selectedPayment?.registrationId}</p>
         <div style={{ marginTop: 16 }}>

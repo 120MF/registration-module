@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Typography, Row, Col } from 'antd';
-import type { MenuProps } from 'antd';
-import { 
-  AppstoreOutlined, 
-  TeamOutlined, 
-  CalendarOutlined, 
-  UserOutlined, 
-  SettingOutlined,
+import {
+  AppstoreOutlined,
+  CalendarOutlined,
+  MedicineBoxOutlined,
   ScheduleOutlined,
-  MedicineBoxOutlined
+  SettingOutlined,
+  TeamOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
+import type { MenuProps } from 'antd';
+import { Col, Layout, Menu, Row, Typography } from 'antd';
+import type React from 'react';
+import { useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 
 const { Header, Content, Sider } = Layout;
@@ -46,26 +47,35 @@ const MainLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider 
-        collapsible 
-        collapsed={collapsed} 
+      <Sider
+        collapsible
+        collapsed={collapsed}
         onCollapse={(value) => setCollapsed(value)}
         style={{ background: '#fff' }}
       >
-        <div className="demo-logo-vertical" style={{ padding: '16px', textAlign: 'center' }}>
-          <Title style={{ color: '#fff', margin: 0 }} level={4}>医院门诊系统</Title>
+        <div
+          className="demo-logo-vertical"
+          style={{ padding: '16px', textAlign: 'center' }}
+        >
+          <Title style={{ color: '#fff', margin: 0 }} level={4}>
+            医院门诊系统
+          </Title>
         </div>
-        <Menu 
-          mode="inline" 
-          defaultSelectedKeys={['dashboard']} 
-          defaultOpenKeys={['sub1']} 
-          style={{ height: '100%', borderRight: 0 }} 
-          items={items} 
+        <Menu
+          mode="inline"
+          defaultSelectedKeys={['dashboard']}
+          defaultOpenKeys={['sub1']}
+          style={{ height: '100%', borderRight: 0 }}
+          items={items}
         />
       </Sider>
       <Layout>
         <Header style={{ padding: 0, background: '#fff' }}>
-          <Row justify="end" align="middle" style={{ paddingRight: 20, height: '100%' }}>
+          <Row
+            justify="end"
+            align="middle"
+            style={{ paddingRight: 20, height: '100%' }}
+          >
             <Col>
               <span>管理员</span>
             </Col>

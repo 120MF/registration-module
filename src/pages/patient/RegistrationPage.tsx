@@ -1,85 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Select, DatePicker, Button, Table, message, Card, Space, Typography } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
+import {
+  Button,
+  Card,
+  Form,
+  message,
+  Select,
+  Space,
+  Table,
+  Typography,
+} from 'antd';
 import dayjs from 'dayjs';
-import { patientAPI, departmentAPI, paymentAPI } from '../../services/api';
-import { Department, Scheduling, Payment } from '../../types';
-const { Text, Title } = Typography;
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { patientAPI, paymentAPI } from '../../services/api';
+import {
+  useDepartmentStore,
+  useDoctorStore,
+  usePatientStore,
+} from '../../stores';
+import type { Scheduling } from '../../types';
 
-const { Option } = Select;
-const { RangePicker } = DatePicker;
+const { Text } = Typography;
 
 const RegistrationPage: React.FC = () => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [doctors, setDoctors] = useState<any[]>([]);
   const [schedules, setSchedules] = useState<Scheduling[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(
+    null,
+  );
   const [selectedDoctor, setSelectedDoctor] = useState<number | null>(null);
-  const [selectedScheduleAmount, setSelectedScheduleAmount] = useState<number>(0);
+  const [selectedScheduleAmount, setSelectedScheduleAmount] =
+    useState<number>(0);
 
-  // 获取科室列表
-  const fetchDepartments = async () => {
-    try {
-      const response = await departmentAPI.getDepartments();
-      // 从数据中筛选出有效的科室
-      const validDepts = (response || []).filter((dept: Department) => dept.status === 1);
-      setDepartments(validDepts);
-    } catch (error) {
-      message.error('获取科室列表失败');
-    }
-  };
+  // 使用全局状态
+  const {
+    departments,
+    loading: deptLoading,
+    fetchDepartments,
+  } = useDepartmentStore();
+  const { doctorsByDepartment, fetchDoctorsByDepartment } = useDoctorStore();
+  const { profile, fetchProfile } = usePatientStore();
 
-  // 根据科室获取医生
-  const fetchDoctors = async (deptId: number) => {
-    try {
-      const response = await patientAPI.getDoctorsByDepartment(deptId);
-      setDoctors(response || []);
-      // 重置医生和号源选择
-      setSelectedDoctor(null);
-      setSchedules([]);
-      form.setFieldsValue({ doctorId: undefined, scheduleId: undefined });
-    } catch (error) {
-      message.error('获取医生列表失败');
-    }
-  };
+  const doctors = selectedDepartment
+    ? doctorsByDepartment[selectedDepartment] || []
+    : [];
+  const validDepartments = departments.filter((dept) => dept.status === 1);
 
   // 根据医生获取号源
   const fetchSchedules = async (doctorId: number) => {
     try {
       const response = await patientAPI.getDoctorSchedules(doctorId);
-      // 过滤出可用的号源
-      const availableSchedules = (response || []).filter((sched: Scheduling) => sched.available && sched.booked < sched.maxPatients);
+      const availableSchedules = (response || []).filter(
+        (sched: Scheduling) => sched.booked < sched.maxPatients,
+      );
       setSchedules(availableSchedules);
-    } catch (error) {
+    } catch {
       message.error('获取号源信息失败');
     }
   };
 
   // 提交挂号和缴费
-  const handleSubmit = async (values: { doctorId: number; scheduleId: number; paymentMethod: string }) => {
+  const handleSubmit = async (values: {
+    doctorId: number;
+    scheduleId: number;
+    paymentMethod: string;
+  }) => {
     setSubmitting(true);
     try {
-      // 首先创建挂号
+      const patientName = profile?.name || '未知患者';
+
       const registration = await patientAPI.createRegistration({
-        departmentId: selectedDepartment,
+        departmentId: selectedDepartment!,
         doctorId: values.doctorId,
         scheduleId: values.scheduleId,
-        patientName: '张三', // 从用户档案获取
-        status: 'pending'
+        patientName,
+        status: 'pending',
       });
 
-      // 获取当前选中的号源信息以获取费用
-      const selectedSchedule = schedules.find(s => s.id === values.scheduleId);
+      const selectedSchedule = schedules.find(
+        (s) => s.id === values.scheduleId,
+      );
       const amount = selectedSchedule?.amount || 0;
 
-      // 创建缴费记录
       await paymentAPI.createPayment({
-        registrationId: registration.id,
-        patientName: '张三', // 从用户档案获取
-        amount: amount,
+        registrationId: registration.data.id,
+        patientName,
+        amount,
         paymentMethod: values.paymentMethod,
         status: 'paid',
         createTime: new Date().toISOString(),
@@ -89,7 +96,8 @@ const RegistrationPage: React.FC = () => {
       form.resetFields();
       setSchedules([]);
       setSelectedDoctor(null);
-    } catch (error) {
+      setSelectedScheduleAmount(0);
+    } catch {
       message.error('挂号或缴费失败');
     } finally {
       setSubmitting(false);
@@ -98,29 +106,29 @@ const RegistrationPage: React.FC = () => {
 
   useEffect(() => {
     fetchDepartments();
-  }, []);
+    fetchProfile();
+  }, [fetchDepartments, fetchProfile]);
 
-  // 当科室选择改变时
-  const handleDepartmentChange = (value: number) => {
+  const handleDepartmentChange = async (value: number) => {
     setSelectedDepartment(value);
+    setSelectedDoctor(null);
+    setSchedules([]);
+    form.setFieldsValue({ doctorId: undefined, scheduleId: undefined });
+
     if (value) {
-      fetchDoctors(value);
-    } else {
-      setDoctors([]);
-      setSchedules([]);
-      setSelectedDoctor(null);
-      form.setFieldsValue({ doctorId: undefined, scheduleId: undefined });
+      await fetchDoctorsByDepartment(value);
     }
   };
 
-  // 当医生选择改变时
   const handleDoctorChange = (value: number) => {
     setSelectedDoctor(value);
+    form.setFieldsValue({ scheduleId: undefined });
+    setSelectedScheduleAmount(0);
+
     if (value) {
       fetchSchedules(value);
     } else {
       setSchedules([]);
-      form.setFieldsValue({ scheduleId: undefined });
     }
   };
 
@@ -144,18 +152,22 @@ const RegistrationPage: React.FC = () => {
     {
       title: '剩余号源',
       key: 'remaining',
-      render: (text: any, record: Scheduling) => record.maxPatients - record.booked,
+      render: (_: unknown, record: Scheduling) =>
+        record.maxPatients - record.booked,
     },
     {
       title: '操作',
       key: 'action',
-      render: (text: any, record: Scheduling) => (
+      render: (_: unknown, record: Scheduling) => (
         <Button
           type="link"
           disabled={record.booked >= record.maxPatients}
           onClick={() => {
             form.setFieldsValue({ scheduleId: record.id });
-            message.success(`已选择 ${dayjs(record.date).format('YYYY-MM-DD')} 的号源`);
+            setSelectedScheduleAmount(record.amount);
+            message.success(
+              `已选择 ${dayjs(record.date).format('YYYY-MM-DD')} 的号源`,
+            );
           }}
         >
           {record.booked >= record.maxPatients ? '已约满' : '选择'}
@@ -166,32 +178,32 @@ const RegistrationPage: React.FC = () => {
 
   return (
     <div>
-      <Card 
+      <Card
         title={
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <AppstoreOutlined style={{ marginRight: '8px', color: '#52c41a' }} />
+            <AppstoreOutlined
+              style={{ marginRight: '8px', color: '#52c41a' }}
+            />
             <span>挂号办理</span>
           </div>
         }
         style={{ marginBottom: '16px' }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="departmentId"
             label="选择科室"
             rules={[{ required: true, message: '请选择科室' }]}
           >
-            <Select 
-              placeholder="请选择科室" 
+            <Select
+              placeholder="请选择科室"
               onChange={handleDepartmentChange}
-              loading={loading}
+              loading={deptLoading}
             >
-              {departments.map(dept => (
-                <Option key={dept.id} value={dept.id}>{dept.name}</Option>
+              {validDepartments.map((dept) => (
+                <Select.Option key={dept.id} value={dept.id}>
+                  {dept.name}
+                </Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -201,14 +213,15 @@ const RegistrationPage: React.FC = () => {
             label="选择医生"
             rules={[{ required: true, message: '请选择医生' }]}
           >
-            <Select 
-              placeholder="请选择医生" 
+            <Select
+              placeholder="请选择医生"
               onChange={handleDoctorChange}
               disabled={!selectedDepartment}
-              loading={loading}
             >
-              {doctors.map(doctor => (
-                <Option key={doctor.id} value={doctor.id}>{doctor.name}</Option>
+              {doctors.map((doctor) => (
+                <Select.Option key={doctor.id} value={doctor.id}>
+                  {doctor.name}
+                </Select.Option>
               ))}
             </Select>
           </Form.Item>
@@ -222,14 +235,14 @@ const RegistrationPage: React.FC = () => {
               placeholder="请选择号源日期"
               disabled={!selectedDoctor}
               onChange={(value) => {
-                const selectedSchedule = schedules.find(s => s.id === value);
+                const selectedSchedule = schedules.find((s) => s.id === value);
                 if (selectedSchedule) {
                   setSelectedScheduleAmount(selectedSchedule.amount);
                 }
               }}
             >
-              {schedules.map(schedule => (
-                <Option
+              {schedules.map((schedule) => (
+                <Select.Option
                   key={schedule.id}
                   value={schedule.id}
                   disabled={schedule.booked >= schedule.maxPatients}
@@ -237,12 +250,11 @@ const RegistrationPage: React.FC = () => {
                   {dayjs(schedule.date).format('YYYY-MM-DD')}
                   (剩余{schedule.maxPatients - schedule.booked}个号源)
                   {schedule.amount && ` - ¥${schedule.amount.toFixed(2)}`}
-                </Option>
+                </Select.Option>
               ))}
             </Select>
           </Form.Item>
 
-          {/* 显示选中的号源费用 */}
           {selectedScheduleAmount > 0 && (
             <Card size="small" style={{ marginBottom: '16px' }}>
               <Text strong>挂号费用: ¥{selectedScheduleAmount.toFixed(2)}</Text>
@@ -258,10 +270,10 @@ const RegistrationPage: React.FC = () => {
               placeholder="请选择缴费方式"
               disabled={!form.getFieldValue('scheduleId')}
             >
-              <Option value="cash">现金</Option>
-              <Option value="card">银行卡</Option>
-              <Option value="wechat">微信支付</Option>
-              <Option value="alipay">支付宝</Option>
+              <Select.Option value="cash">现金</Select.Option>
+              <Select.Option value="card">银行卡</Select.Option>
+              <Select.Option value="wechat">微信支付</Select.Option>
+              <Select.Option value="alipay">支付宝</Select.Option>
             </Select>
           </Form.Item>
 
@@ -271,11 +283,19 @@ const RegistrationPage: React.FC = () => {
                 type="primary"
                 htmlType="submit"
                 loading={submitting}
-                disabled={!form.getFieldValue('scheduleId') || !form.getFieldValue('paymentMethod')}
+                disabled={
+                  !form.getFieldValue('scheduleId') ||
+                  !form.getFieldValue('paymentMethod')
+                }
               >
                 确认挂号并缴费
               </Button>
-              <Button onClick={() => form.resetFields()}>
+              <Button
+                onClick={() => {
+                  form.resetFields();
+                  setSelectedScheduleAmount(0);
+                }}
+              >
                 重置
               </Button>
             </Space>
@@ -283,14 +303,10 @@ const RegistrationPage: React.FC = () => {
         </Form>
 
         {schedules.length > 0 && (
-          <Card 
-            title="号源详情" 
-            size="small"
-            style={{ marginTop: '16px' }}
-          >
-            <Table 
-              columns={scheduleColumns} 
-              dataSource={schedules} 
+          <Card title="号源详情" size="small" style={{ marginTop: '16px' }}>
+            <Table
+              columns={scheduleColumns}
+              dataSource={schedules}
               rowKey="id"
               pagination={false}
             />

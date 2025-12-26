@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Tag, Input, Select, message } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
+import { Button, Input, message, Select, Space, Table, Tag } from 'antd';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { staffAPI } from '../../services/api';
-import { Staff } from '../../types';
+import type { Staff } from '../../types';
 
 const { Search } = Input;
 const { Option } = Select;
@@ -32,9 +33,13 @@ const StaffPage: React.FC = () => {
   }, []);
 
   // 过滤数据
-  const filteredStaff = staffList.filter(staff => {
-    const matchesSearch = staff.name.toLowerCase().includes(searchText.toLowerCase());
-    const matchesDepartment = !selectedDepartment || staff.departmentId.toString() === selectedDepartment;
+  const filteredStaff = staffList.filter((staff) => {
+    const matchesSearch = staff.name
+      .toLowerCase()
+      .includes(searchText.toLowerCase());
+    const matchesDepartment =
+      !selectedDepartment ||
+      staff.departmentId.toString() === selectedDepartment;
     return matchesSearch && matchesDepartment;
   });
 
@@ -59,14 +64,12 @@ const StaffPage: React.FC = () => {
       dataIndex: 'role',
       key: 'role',
       render: (role: string) => (
-        <Tag color={
-          role === 'doctor' ? 'blue' : 
-          role === 'nurse' ? 'green' : 
-          'orange'
-        }>
-          {role === 'doctor' ? '医生' : 
-           role === 'nurse' ? '护士' : 
-           '管理员'}
+        <Tag
+          color={
+            role === 'doctor' ? 'blue' : role === 'nurse' ? 'green' : 'orange'
+          }
+        >
+          {role === 'doctor' ? '医生' : role === 'nurse' ? '护士' : '管理员'}
         </Tag>
       ),
     },
@@ -80,10 +83,10 @@ const StaffPage: React.FC = () => {
           103: '儿科',
           104: '妇科',
           105: '眼科',
-          0: '管理员'
+          0: '管理员',
         };
         return deptMap[record.departmentId] || '未知科室';
-      }
+      },
     },
     {
       title: '操作',
@@ -91,7 +94,9 @@ const StaffPage: React.FC = () => {
       render: (text: any, record: any) => (
         <Space size="middle">
           <Button type="link">编辑</Button>
-          <Button type="link" danger>删除</Button>
+          <Button type="link" danger>
+            删除
+          </Button>
         </Space>
       ),
     },
@@ -123,10 +128,10 @@ const StaffPage: React.FC = () => {
         </Select>
         <Button type="primary">新增人员</Button>
       </div>
-      
-      <Table 
-        columns={columns} 
-        dataSource={filteredStaff} 
+
+      <Table
+        columns={columns}
+        dataSource={filteredStaff}
         rowKey="id"
         loading={loading}
       />

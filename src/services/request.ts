@@ -34,7 +34,7 @@ request.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // 响应拦截器
@@ -47,7 +47,7 @@ request.interceptors.response.use(
     // 统一处理错误
     console.error('API请求错误:', error);
     return Promise.reject(error);
-  }
+  },
 );
 
 export default request;

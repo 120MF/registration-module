@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Table, 
-  Button, 
-  Modal, 
-  Form, 
-  Input, 
-  Select, 
-  DatePicker, 
-  message, 
+import {
+  Button,
+  DatePicker,
+  Form,
+  Input,
+  Modal,
+  message,
+  Popconfirm,
+  Select,
   Space,
-  Popconfirm
+  Table,
 } from 'antd';
+import dayjs from 'dayjs';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { patientManagementAPI } from '../../services/api';
 import type { PatientProfile } from '../../types';
-import dayjs from 'dayjs';
 
 const { Option } = Select;
 
@@ -21,7 +22,9 @@ const PatientManagementPage: React.FC = () => {
   const [patients, setPatients] = useState<PatientProfile[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [editingPatient, setEditingPatient] = useState<PatientProfile | null>(null);
+  const [editingPatient, setEditingPatient] = useState<PatientProfile | null>(
+    null,
+  );
   const [form] = Form.useForm();
 
   // 获取患者列表
@@ -71,7 +74,7 @@ const PatientManagementPage: React.FC = () => {
         await patientManagementAPI.createPatient(values);
         message.success('患者创建成功');
       }
-      
+
       setModalVisible(false);
       form.resetFields();
       fetchPatients(); // 刷新列表
@@ -112,7 +115,8 @@ const PatientManagementPage: React.FC = () => {
       dataIndex: 'gender',
       key: 'gender',
       width: 80,
-      render: (gender: string) => (gender === '男' ? '男' : gender === '女' ? '女' : gender),
+      render: (gender: string) =>
+        gender === '男' ? '男' : gender === '女' ? '女' : gender,
     },
     {
       title: '出生日期',
@@ -147,8 +151,8 @@ const PatientManagementPage: React.FC = () => {
       width: 180,
       render: (_, record: PatientProfile) => (
         <Space size="middle">
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             onClick={() => showEditModal(record)}
             style={{ padding: 0 }}
           >
@@ -171,17 +175,24 @@ const PatientManagementPage: React.FC = () => {
 
   return (
     <div>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div
+        style={{
+          marginBottom: 16,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
+      >
         <h2>患者管理</h2>
         <Button type="primary" onClick={showAddModal}>
           新增患者
         </Button>
       </div>
 
-      <Table 
-        dataSource={patients} 
-        columns={columns} 
-        rowKey="id" 
+      <Table
+        dataSource={patients}
+        columns={columns}
+        rowKey="id"
         loading={loading}
         pagination={{
           showSizeChanger: true,
@@ -201,11 +212,7 @@ const PatientManagementPage: React.FC = () => {
         onOk={() => form.submit()}
         destroyOnClose
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="name"
             label="姓名"
@@ -230,8 +237,8 @@ const PatientManagementPage: React.FC = () => {
             label="出生日期"
             rules={[{ required: true, message: '请选择出生日期' }]}
           >
-            <DatePicker 
-              placeholder="请选择出生日期" 
+            <DatePicker
+              placeholder="请选择出生日期"
               format="YYYY-MM-DD"
               style={{ width: '100%' }}
             />
@@ -253,9 +260,9 @@ const PatientManagementPage: React.FC = () => {
             label="身份证号"
             rules={[
               { required: true, message: '请输入身份证号' },
-              { 
-                pattern: /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, 
-                message: '请输入正确的身份证号' 
+              {
+                pattern: /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/,
+                message: '请输入正确的身份证号',
               },
             ]}
           >

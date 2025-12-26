@@ -1,14 +1,23 @@
-import React from 'react';
-import { Layout, Menu, Typography } from 'antd';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { LogoutOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
+import { Button, Layout, Menu, Space, Typography } from 'antd';
+import type React from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
 const AdminLayout: React.FC = () => {
   const location = useLocation();
-  
+  const navigate = useNavigate();
+  const { user, logout } = useAuthStore();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const menuItems: MenuProps['items'] = [
     {
       key: '/admin/departments',
@@ -38,10 +47,32 @@ const AdminLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center', backgroundColor: '#1890ff' }}>
-        <div style={{ marginRight: '24px' }}>
-          <Title level={3} style={{ color: 'white', margin: 0 }}>医院管理系统</Title>
+      <Header
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          backgroundColor: '#1890ff',
+        }}
+      >
+        <div>
+          <Title level={3} style={{ color: 'white', margin: 0 }}>
+            医院管理系统
+          </Title>
         </div>
+        <Space>
+          <Typography.Text style={{ color: 'white' }}>
+            {user?.username || '管理员'}
+          </Typography.Text>
+          <Button
+            type="text"
+            icon={<LogoutOutlined />}
+            onClick={handleLogout}
+            style={{ color: 'white' }}
+          >
+            退出
+          </Button>
+        </Space>
       </Header>
       <Layout>
         <Sider width={200} style={{ background: '#fff' }}>

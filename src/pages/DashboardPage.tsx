@@ -1,11 +1,11 @@
-import React from 'react';
-import { Card, Row, Col, Statistic, Typography } from 'antd';
-import { 
-  UserOutlined, 
-  CalendarOutlined, 
-  CheckCircleOutlined, 
-  ClockCircleOutlined 
+import {
+  CalendarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
 } from '@ant-design/icons';
+import { Card, Col, Row, Statistic, Typography } from 'antd';
+import type React from 'react';
 
 const { Title } = Typography;
 
@@ -16,20 +16,12 @@ const DashboardPage: React.FC = () => {
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card>
-            <Statistic
-              title="科室数量"
-              value={12}
-              prefix={<UserOutlined />}
-            />
+            <Statistic title="科室数量" value={12} prefix={<UserOutlined />} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic
-              title="专家数量"
-              value={48}
-              prefix={<UserOutlined />}
-            />
+            <Statistic title="专家数量" value={48} prefix={<UserOutlined />} />
           </Card>
         </Col>
         <Col span={6}>

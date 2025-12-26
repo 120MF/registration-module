@@ -1,21 +1,20 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { ConfigProvider, App as AntdApp } from 'antd';
+import { App as AntdApp, ConfigProvider } from 'antd';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
 import MobileLayout from './layouts/MobileLayout';
-import LoginPage from './pages/login/LoginPage';
-
 // Admin pages
 import DepartmentPage from './pages/admin/DepartmentPage';
-import StaffPage from './pages/admin/StaffPage';
-import SchedulingPage from './pages/admin/SchedulingPage';
 import PatientManagementPage from './pages/admin/PatientManagementPage';
 import PaymentPage from './pages/admin/PaymentPage';
 import PrescriptionPage from './pages/admin/PrescriptionPage';
+import SchedulingPage from './pages/admin/SchedulingPage';
+import StaffPage from './pages/admin/StaffPage';
+import LoginPage from './pages/login/LoginPage';
 
 // Patient pages
 import ProfilePage from './pages/patient/ProfilePage';
-import RegistrationPage from './pages/patient/RegistrationPage';
 import RegistrationHistoryPage from './pages/patient/RegistrationHistoryPage';
+import RegistrationPage from './pages/patient/RegistrationPage';
 
 import './App.css';
 
@@ -35,7 +34,7 @@ const App = () => {
             <Route path="/login" element={<LoginPage />} />
 
             {/* 管理员子系统 */}
-            <Route path="/admin/*" element={<AdminLayout />} >
+            <Route path="/admin/*" element={<AdminLayout />}>
               <Route index element={<DepartmentPage />} />
               <Route path="departments" element={<DepartmentPage />} />
               <Route path="staff" element={<StaffPage />} />
@@ -46,7 +45,7 @@ const App = () => {
             </Route>
 
             {/* 患者移动端子系统 */}
-            <Route path="/patient/*" element={<MobileLayout />} >
+            <Route path="/patient/*" element={<MobileLayout />}>
               <Route index element={<ProfilePage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="registration" element={<RegistrationPage />} />

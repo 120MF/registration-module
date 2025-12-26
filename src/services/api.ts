@@ -3,11 +3,11 @@
 import type {
   Department,
   PatientProfile,
+  Payment,
+  Prescription,
   Registration,
   Scheduling,
   Staff,
-  Payment,
-  Prescription,
 } from '../types';
 import request from './request';
 
@@ -48,12 +48,12 @@ export const patientAPI = {
     request.put<PatientProfile>('/patients/profile', data),
   getDoctorsByDepartment: (deptId: number) =>
     request
-      .get<{ success: boolean; data: any[] }>(
-        `/departments/${deptId}/doctors`,
-      )
+      .get<{ success: boolean; data: any[] }>(`/departments/${deptId}/doctors`)
       .then((res) => res.data),
   getDoctorSchedules: (doctorId: number) =>
-    request.get<{ success: boolean; data: any[] }>(`/doctors/${doctorId}/schedules`).then(res => res.data),
+    request
+      .get<{ success: boolean; data: any[] }>(`/doctors/${doctorId}/schedules`)
+      .then((res) => res.data),
   createRegistration: (data: Omit<Registration, 'id'>) =>
     request.post<Registration>('/registrations', data),
 };
@@ -89,9 +89,7 @@ export const adminAPI = {
   deleteScheduling: (id: number) => request.delete(`/scheduling/${id}`),
   getDoctorsByDepartment: (deptId: number) =>
     request
-      .get<{ success: boolean; data: any[] }>(
-        `/departments/${deptId}/doctors`,
-      )
+      .get<{ success: boolean; data: any[] }>(`/departments/${deptId}/doctors`)
       .then((res) => res.data),
   // 其他管理API
   getDepartments: () =>
@@ -135,4 +133,3 @@ export const prescriptionAPI = {
     request.put<Prescription>(`/prescriptions/${id}`, data),
   deletePrescription: (id: string) => request.delete(`/prescriptions/${id}`),
 };
-

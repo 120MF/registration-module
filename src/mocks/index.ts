@@ -1,6 +1,14 @@
 import MockAdapter from 'axios-mock-adapter';
 import request from '../services/request';
-import { Scheduling, Department, Staff, PatientProfile, Registration, Payment, Prescription } from '../types';
+import type {
+  Department,
+  PatientProfile,
+  Payment,
+  Prescription,
+  Registration,
+  Scheduling,
+  Staff,
+} from '../types';
 
 const mock = new MockAdapter(request, { delayResponse: 500 });
 
@@ -15,21 +23,11 @@ mock.onPost('/login').reply((config) => {
         success: true,
         data: {
           token: 'mock-token-admin',
-          role: 'admin',
-          name: '管理员',
-        },
-      },
-    ];
-  } else if (username === 'doctor') {
-    return [
-      200,
-      {
-        success: true,
-        data: {
-          token: 'mock-token-doctor',
-          role: 'doctor',
-          name: '张医生',
-          departmentId: 101,
+          user: {
+            id: 'admin-001',
+            username: 'admin',
+            role: 'admin',
+          },
         },
       },
     ];
@@ -40,8 +38,11 @@ mock.onPost('/login').reply((config) => {
         success: true,
         data: {
           token: 'mock-token-patient',
-          role: 'patient',
-          name: '患者',
+          user: {
+            id: 'patient-001',
+            username: 'patient',
+            role: 'patient',
+          },
         },
       },
     ];
@@ -117,11 +118,6 @@ mock.onGet('/staff').reply(200, {
   ] as Staff[],
 });
 
-
-
-
-
-
 // 患者档案相关接口
 mock.onGet('/patients/profile').reply(200, {
   success: true,
@@ -184,7 +180,12 @@ mock.onGet(/\/patients\/\d+/).reply((config) => {
     gender: id === 2 ? '女' : '男',
     birthDate: id === 1 ? '1990-05-15' : id === 2 ? '1985-08-22' : '1978-12-10',
     phone: id === 1 ? '13800138000' : id === 2 ? '13900139000' : '13700137000',
-    idCard: id === 1 ? '110101199003071234' : id === 2 ? '220202198508225678' : '330303197812109012',
+    idCard:
+      id === 1
+        ? '110101199003071234'
+        : id === 2
+          ? '220202198508225678'
+          : '330303197812109012',
     isInsurance: id === 2 ? false : true,
   };
   return [200, { success: true, data: patient as PatientProfile }];
@@ -209,7 +210,6 @@ mock.onDelete(/\/patients\/\d+/).reply((config) => {
   const id = Number(url?.split('/').pop());
   return [200, { success: true, message: `患者${id}删除成功` }];
 });
-
 
 mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
   const url = config.url;
@@ -287,18 +287,20 @@ mock.onGet(/\/doctors\/\d+\/schedules/).reply((config) => {
       timeSlot: '上午 9:00-12:00',
       status: 1,
       amount: 45, // 挂号费用
-    }
+    },
   ];
 
   // 只返回匹配医生ID的数据
-  const doctorSchedules = mockSchedules.filter(sched => sched.doctorId === doctorId);
+  const doctorSchedules = mockSchedules.filter(
+    (sched) => sched.doctorId === doctorId,
+  );
 
   return [
     200,
     {
       success: true,
       data: doctorSchedules,
-    }
+    },
   ];
 });
 
@@ -317,7 +319,6 @@ mock.onPost('/registrations').reply((config) => {
     },
   ];
 });
-
 
 // 号源管理相关接口
 let schedulingData: Scheduling[] = [
@@ -396,7 +397,7 @@ mock.onPost('/scheduling').reply((config) => {
     { id: 104, name: '妇科', status: 1 },
     { id: 105, name: '眼科', status: 1 },
   ];
-  const dept = departments.find(d => d.id === newScheduling.departmentId);
+  const dept = departments.find((d) => d.id === newScheduling.departmentId);
   newScheduling.departmentName = dept ? dept.name : '未知科室';
 
   newScheduling.doctorName = '未知医生';
@@ -410,7 +411,7 @@ mock.onPut(/\/scheduling\/\d+/).reply((config) => {
   const id = Number(url?.split('/').pop());
   const updatedScheduling: Scheduling = {
     ...JSON.parse(config.data),
-    id: id
+    id: id,
   };
 
   // 根据departmentId获取科室名称
@@ -421,13 +422,13 @@ mock.onPut(/\/scheduling\/\d+/).reply((config) => {
     { id: 104, name: '妇科', status: 1 },
     { id: 105, name: '眼科', status: 1 },
   ];
-  const dept = departments.find(d => d.id === updatedScheduling.departmentId);
+  const dept = departments.find((d) => d.id === updatedScheduling.departmentId);
   updatedScheduling.departmentName = dept ? dept.name : '未知科室';
 
   updatedScheduling.doctorName = '未知医生';
 
-  schedulingData = schedulingData.map(item =>
-    item.id === id ? { ...item, ...updatedScheduling } : item
+  schedulingData = schedulingData.map((item) =>
+    item.id === id ? { ...item, ...updatedScheduling } : item,
   );
 
   return [200, { success: true, data: updatedScheduling }];
@@ -436,7 +437,7 @@ mock.onPut(/\/scheduling\/\d+/).reply((config) => {
 mock.onDelete(/\/scheduling\/\d+/).reply((config) => {
   const url = config.url;
   const id = Number(url?.split('/').pop());
-  schedulingData = schedulingData.filter(item => item.id !== id);
+  schedulingData = schedulingData.filter((item) => item.id !== id);
   return [200, { success: true, message: `号源${id}删除成功` }];
 });
 
@@ -453,13 +454,15 @@ mock.onGet(/\/departments\/\d+\/doctors/).reply((config) => {
     { id: 5, name: '陈医生', departmentId: 104 },
   ];
 
-  const filteredDoctors = doctors.filter(doctor => doctor.departmentId === departmentId);
+  const filteredDoctors = doctors.filter(
+    (doctor) => doctor.departmentId === departmentId,
+  );
 
   return [200, { success: true, data: filteredDoctors }];
 });
 
 // 缴费管理相关接口
-let paymentData: Payment[] = [
+const paymentData: Payment[] = [
   {
     id: 'PAY001',
     registrationId: 'GH1700000000000',
@@ -508,7 +511,7 @@ mock.onGet('/payments').reply(200, {
 mock.onGet(/\/payments\/\w+/).reply((config) => {
   const url = config.url;
   const id = url?.split('/').pop();
-  const payment = paymentData.find(p => p.id === id);
+  const payment = paymentData.find((p) => p.id === id);
 
   if (payment) {
     return [200, { success: true, data: payment }];
@@ -534,7 +537,7 @@ mock.onPut(/\/payments\/\w+\/refund/).reply((config) => {
   const id = url?.split('/')[2]; // 提取缴费ID
   const { refundReason } = JSON.parse(config.data);
 
-  const paymentIndex = paymentData.findIndex(p => p.id === id);
+  const paymentIndex = paymentData.findIndex((p) => p.id === id);
 
   if (paymentIndex !== -1) {
     paymentData[paymentIndex] = {
@@ -555,7 +558,7 @@ mock.onPut(/\/payments\/\w+/).reply((config) => {
   const id = url?.split('/')[2]; // 提取缴费ID
   const updateData = JSON.parse(config.data);
 
-  const paymentIndex = paymentData.findIndex(p => p.id === id);
+  const paymentIndex = paymentData.findIndex((p) => p.id === id);
 
   if (paymentIndex !== -1) {
     paymentData[paymentIndex] = {
@@ -582,7 +585,7 @@ let prescriptionData: Prescription[] = [
     diagnosis: '感冒',
     create_time: '2025-05-25T10:30:00Z',
     update_time: '2025-05-25T10:30:00Z',
-    remark: '多喝水，注意休息'
+    remark: '多喝水，注意休息',
   },
   {
     prescription_id: 'PRE002',
@@ -595,7 +598,7 @@ let prescriptionData: Prescription[] = [
     diagnosis: '急性肠胃炎',
     create_time: '2025-05-25T11:15:00Z',
     update_time: '2025-05-25T11:15:00Z',
-    remark: '清淡饮食，按时服药'
+    remark: '清淡饮食，按时服药',
   },
   {
     prescription_id: 'PRE003',
@@ -608,7 +611,7 @@ let prescriptionData: Prescription[] = [
     diagnosis: '疑似心绞痛',
     create_time: '2025-05-24T09:20:00Z',
     update_time: '2025-05-24T09:20:00Z',
-    remark: '进一步检查后作废'
+    remark: '进一步检查后作废',
   },
   {
     prescription_id: 'PRE004',
@@ -621,7 +624,7 @@ let prescriptionData: Prescription[] = [
     diagnosis: '支气管炎',
     create_time: '2025-05-26T08:45:00Z',
     update_time: '2025-05-26T08:45:00Z',
-    remark: '按医嘱服药，一周后复诊'
+    remark: '按医嘱服药，一周后复诊',
   },
 ];
 
@@ -633,7 +636,7 @@ mock.onGet('/prescriptions').reply(200, {
 mock.onGet(/\/prescriptions\/\w+/).reply((config) => {
   const url = config.url;
   const id = url?.split('/').pop();
-  const prescription = prescriptionData.find(p => p.prescription_id === id);
+  const prescription = prescriptionData.find((p) => p.prescription_id === id);
 
   if (prescription) {
     return [200, { success: true, data: prescription }];
@@ -660,7 +663,9 @@ mock.onPut(/\/prescriptions\/\w+/).reply((config) => {
   const id = url?.split('/')[2]; // 提取处方ID
   const updateData = JSON.parse(config.data);
 
-  const prescriptionIndex = prescriptionData.findIndex(p => p.prescription_id === id);
+  const prescriptionIndex = prescriptionData.findIndex(
+    (p) => p.prescription_id === id,
+  );
 
   if (prescriptionIndex !== -1) {
     prescriptionData[prescriptionIndex] = {
@@ -680,7 +685,7 @@ mock.onDelete(/\/prescriptions\/\w+/).reply((config) => {
   const id = url?.split('/')[2]; // 提取处方ID
 
   const initialLength = prescriptionData.length;
-  prescriptionData = prescriptionData.filter(p => p.prescription_id !== id);
+  prescriptionData = prescriptionData.filter((p) => p.prescription_id !== id);
 
   if (prescriptionData.length < initialLength) {
     return [200, { success: true, message: `处方${id}删除成功` }];
@@ -695,4 +700,3 @@ mock.onAny().passThrough();
 console.log('Mock Adapter 已启动 🚀');
 
 export default request;
-

@@ -1,62 +1,86 @@
-import React, { useState, useEffect } from 'react';
-import { Form, Input, Button, DatePicker, Radio, Switch, message, Card, Space } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import {
+  Button,
+  Card,
+  DatePicker,
+  Form,
+  Input,
+  message,
+  Radio,
+  Space,
+  Switch,
+} from 'antd';
 import dayjs from 'dayjs';
-import { patientAPI } from '../../services/api';
-
-const { RangePicker } = DatePicker;
+import type React from 'react';
+import { useEffect } from 'react';
+import { usePatientStore } from '../../stores';
+import type { PatientProfile } from '../../types';
 
 const ProfilePage: React.FC = () => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { profile, loading, saving, fetchProfile, updateProfile } =
+    usePatientStore();
 
-  // 获取患者档案
-  const fetchProfile = async () => {
-    setLoading(true);
-    try {
-      const response = await patientAPI.getProfile();
-      const profile = response.data;
-      
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    if (profile) {
       form.setFieldsValue({
         name: profile.name,
         gender: profile.gender,
         birthDate: profile.birthDate ? dayjs(profile.birthDate) : null,
         phone: profile.phone,
+        idCard: profile.idCard,
         isInsurance: profile.isInsurance,
-        allergies: profile.allergies,
-        medicalHistory: profile.medicalHistory,
       });
-    } catch (error) {
-      message.error('获取档案信息失败');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [profile, form]);
 
-  // 保存患者档案
-  const saveProfile = async (values: any) => {
-    setSaving(true);
+  const handleSave = async (values: {
+    name: string;
+    gender: string;
+    birthDate: dayjs.Dayjs | null;
+    phone: string;
+    idCard: string;
+    isInsurance: boolean;
+  }) => {
     try {
-      await patientAPI.updateProfile({
-        ...values,
-        birthDate: values.birthDate ? values.birthDate.format('YYYY-MM-DD') : null,
-      });
+      const data: PatientProfile = {
+        id: profile?.id || 0,
+        name: values.name,
+        gender: values.gender,
+        birthDate: values.birthDate
+          ? values.birthDate.format('YYYY-MM-DD')
+          : '',
+        phone: values.phone,
+        idCard: values.idCard || profile?.idCard || '',
+        isInsurance: values.isInsurance,
+      };
+      await updateProfile(data);
       message.success('档案更新成功');
-    } catch (error) {
+    } catch {
       message.error('更新档案失败');
-    } finally {
-      setSaving(false);
     }
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  const handleReset = () => {
+    if (profile) {
+      form.setFieldsValue({
+        name: profile.name,
+        gender: profile.gender,
+        birthDate: profile.birthDate ? dayjs(profile.birthDate) : null,
+        phone: profile.phone,
+        idCard: profile.idCard,
+        isInsurance: profile.isInsurance,
+      });
+    }
+  };
 
   return (
     <div>
-      <Card 
+      <Card
         title={
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <UserOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
@@ -64,11 +88,12 @@ const ProfilePage: React.FC = () => {
           </div>
         }
         style={{ marginBottom: '16px' }}
+        loading={loading}
       >
         <Form
           form={form}
           layout="vertical"
-          onFinish={saveProfile}
+          onFinish={handleSave}
           initialValues={{
             isInsurance: false,
           }}
@@ -92,11 +117,8 @@ const ProfilePage: React.FC = () => {
             </Radio.Group>
           </Form.Item>
 
-          <Form.Item
-            name="birthDate"
-            label="出生日期"
-          >
-            <DatePicker 
+          <Form.Item name="birthDate" label="出生日期">
+            <DatePicker
               style={{ width: '100%' }}
               placeholder="请选择出生日期"
               format="YYYY-MM-DD"
@@ -108,7 +130,7 @@ const ProfilePage: React.FC = () => {
             label="联系电话"
             rules={[
               { required: true, message: '请输入联系电话' },
-              { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码' }
+              { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码' },
             ]}
           >
             <Input placeholder="请输入联系电话" />
@@ -122,32 +144,12 @@ const ProfilePage: React.FC = () => {
             <Switch />
           </Form.Item>
 
-          <Form.Item
-            name="allergies"
-            label="过敏史"
-          >
-            <Input.TextArea 
-              rows={3} 
-              placeholder="请输入过敏史，如无请填写无" 
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="medicalHistory"
-            label="既往病史"
-          >
-            <Input.TextArea 
-              rows={4} 
-              placeholder="请输入既往病史，如无请填写无" 
-            />
-          </Form.Item>
-
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={saving}>
                 保存
               </Button>
-              <Button onClick={fetchProfile} disabled={loading}>
+              <Button onClick={handleReset} disabled={loading}>
                 重置
               </Button>
             </Space>
