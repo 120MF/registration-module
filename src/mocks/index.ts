@@ -1,6 +1,6 @@
 import MockAdapter from 'axios-mock-adapter';
 import request from '../services/request';
-import { Scheduling, Department, Staff, PatientProfile, Registration, Payment } from '../types';
+import { Scheduling, Department, Staff, PatientProfile, Registration, Payment, Prescription } from '../types';
 
 const mock = new MockAdapter(request, { delayResponse: 500 });
 
@@ -566,6 +566,126 @@ mock.onPut(/\/payments\/\w+/).reply((config) => {
     return [200, { success: true, data: paymentData[paymentIndex] }];
   } else {
     return [404, { success: false, message: '缴费记录不存在' }];
+  }
+});
+
+// 处方管理相关接口
+let prescriptionData: Prescription[] = [
+  {
+    prescription_id: 'PRE001',
+    reg_id: 'GH1700000000000',
+    patient_id: 1,
+    staff_id: 1,
+    prescription_date: '2025-05-25T10:30:00Z',
+    prescription_status: 1, // 有效
+    symptoms: '头痛、发热',
+    diagnosis: '感冒',
+    create_time: '2025-05-25T10:30:00Z',
+    update_time: '2025-05-25T10:30:00Z',
+    remark: '多喝水，注意休息'
+  },
+  {
+    prescription_id: 'PRE002',
+    reg_id: 'GH1700000000001',
+    patient_id: 2,
+    staff_id: 1,
+    prescription_date: '2025-05-25T11:15:00Z',
+    prescription_status: 1, // 有效
+    symptoms: '腹痛、腹泻',
+    diagnosis: '急性肠胃炎',
+    create_time: '2025-05-25T11:15:00Z',
+    update_time: '2025-05-25T11:15:00Z',
+    remark: '清淡饮食，按时服药'
+  },
+  {
+    prescription_id: 'PRE003',
+    reg_id: 'GH1700000000002',
+    patient_id: 3,
+    staff_id: 4,
+    prescription_date: '2025-05-24T09:20:00Z',
+    prescription_status: 0, // 作废
+    symptoms: '胸痛',
+    diagnosis: '疑似心绞痛',
+    create_time: '2025-05-24T09:20:00Z',
+    update_time: '2025-05-24T09:20:00Z',
+    remark: '进一步检查后作废'
+  },
+  {
+    prescription_id: 'PRE004',
+    reg_id: 'GH1700000000003',
+    patient_id: 1,
+    staff_id: 4,
+    prescription_date: '2025-05-26T08:45:00Z',
+    prescription_status: 2, // 已归档
+    symptoms: '咳嗽、咳痰',
+    diagnosis: '支气管炎',
+    create_time: '2025-05-26T08:45:00Z',
+    update_time: '2025-05-26T08:45:00Z',
+    remark: '按医嘱服药，一周后复诊'
+  },
+];
+
+mock.onGet('/prescriptions').reply(200, {
+  success: true,
+  data: prescriptionData,
+});
+
+mock.onGet(/\/prescriptions\/\w+/).reply((config) => {
+  const url = config.url;
+  const id = url?.split('/').pop();
+  const prescription = prescriptionData.find(p => p.prescription_id === id);
+
+  if (prescription) {
+    return [200, { success: true, data: prescription }];
+  } else {
+    return [404, { success: false, message: '处方记录不存在' }];
+  }
+});
+
+mock.onPost('/prescriptions').reply((config) => {
+  const newPrescription: Prescription = {
+    ...JSON.parse(config.data),
+    prescription_id: 'PRE' + Date.now(), // 简单模拟ID生成
+    prescription_status: 1, // 新处方默认为有效
+    create_time: new Date().toISOString(),
+    update_time: new Date().toISOString(),
+  };
+
+  prescriptionData.push(newPrescription);
+  return [200, { success: true, data: newPrescription }];
+});
+
+mock.onPut(/\/prescriptions\/\w+/).reply((config) => {
+  const url = config.url;
+  const id = url?.split('/')[2]; // 提取处方ID
+  const updateData = JSON.parse(config.data);
+
+  const prescriptionIndex = prescriptionData.findIndex(p => p.prescription_id === id);
+
+  if (prescriptionIndex !== -1) {
+    prescriptionData[prescriptionIndex] = {
+      ...prescriptionData[prescriptionIndex],
+      ...updateData,
+      update_time: new Date().toISOString(),
+    };
+
+    return [200, { success: true, data: prescriptionData[prescriptionIndex] }];
+  } else {
+    return [404, { success: false, message: '处方记录不存在' }];
+  }
+});
+
+mock.onDelete(/\/prescriptions\/\w+/).reply((config) => {
+  const url = config.url;
+  const id = url?.split('/')[2]; // 提取处方ID
+
+  const initialLength = prescriptionData.length;
+  prescriptionData = prescriptionData.filter(p => p.prescription_id !== id);
+
+  if (prescriptionData.length < initialLength) {
+    return [200, { success: true, message: `处方${id}删除成功` }];
+  } else {
+    return [404, { success: false, message: '处方记录不存在' }];
   }
 });
 

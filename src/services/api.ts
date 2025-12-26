@@ -7,6 +7,7 @@ import type {
   Scheduling,
   Staff,
   Payment,
+  Prescription,
 } from '../types';
 import request from './request';
 
@@ -116,5 +117,22 @@ export const paymentAPI = {
   // 退费操作
   refundPayment: (id: string, refundReason?: string) =>
     request.put<Payment>(`/payments/${id}/refund`, { refundReason }),
+};
+
+// 处方管理API
+export const prescriptionAPI = {
+  getPrescriptions: () =>
+    request
+      .get<{ success: boolean; data: Prescription[] }>('/prescriptions')
+      .then((res) => res.data),
+  getPrescriptionById: (id: string) =>
+    request
+      .get<{ success: boolean; data: Prescription }>(`/prescriptions/${id}`)
+      .then((res) => res.data),
+  createPrescription: (data: Omit<Prescription, 'prescription_id'>) =>
+    request.post<Prescription>('/prescriptions', data),
+  updatePrescription: (id: string, data: Partial<Prescription>) =>
+    request.put<Prescription>(`/prescriptions/${id}`, data),
+  deletePrescription: (id: string) => request.delete(`/prescriptions/${id}`),
 };
 

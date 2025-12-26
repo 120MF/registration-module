@@ -64,3 +64,18 @@ export interface Payment {
   refundTime?: string; // 退费时间（如果已退费）
   refundReason?: string; // 退费原因
 }
+
+// 处方类型定义
+export interface Prescription {
+  prescription_id: string; // 处方唯一 ID（ UUID）
+  reg_id: string; // 关联挂号表的挂号 ID（外键）
+  patient_id: number; // 关联患者表的患者 ID（外键）
+  staff_id: number; // 关联医生表的医生 ID（外键）
+  prescription_date: string; // 处方开具时间
+  prescription_status: number; // 处方状态：1 = 有效，0 = 作废，2 = 已归档
+  symptoms: string; // 病人症状
+  diagnosis: string; // 诊断结果
+  create_time: string; // 记录创建时间
+  update_time: string; // 记录更新时间
+  remark?: string; // 处方备注（如特殊说明）
+}

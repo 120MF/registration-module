@@ -10,6 +10,7 @@ import StaffPage from './pages/admin/StaffPage';
 import SchedulingPage from './pages/admin/SchedulingPage';
 import PatientManagementPage from './pages/admin/PatientManagementPage';
 import PaymentPage from './pages/admin/PaymentPage';
+import PrescriptionPage from './pages/admin/PrescriptionPage';
 
 // Patient pages
 import ProfilePage from './pages/patient/ProfilePage';
@@ -41,6 +42,7 @@ const App = () => {
               <Route path="scheduling" element={<SchedulingPage />} />
               <Route path="patients" element={<PatientManagementPage />} />
               <Route path="payments" element={<PaymentPage />} />
+              <Route path="prescriptions" element={<PrescriptionPage />} />
             </Route>
 
             {/* 患者移动端子系统 */}
