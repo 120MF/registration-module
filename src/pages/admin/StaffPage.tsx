@@ -1,5 +1,5 @@
-import { SearchOutlined } from '@ant-design/icons';
-import { Button, Input, message, Select, Space, Table, Tag } from 'antd';
+import { SearchOutlined, UserAddOutlined } from '@ant-design/icons';
+import { Button, Form, Input, InputNumber, message, Modal, Select, Space, Table, Tag } from 'antd';
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { staffAPI } from '../../services/api';
@@ -13,6 +13,8 @@ const StaffPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
   // 获取人员列表
   const fetchStaff = async () => {
@@ -42,6 +44,34 @@ const StaffPage: React.FC = () => {
       staff.departmentId.toString() === selectedDepartment;
     return matchesSearch && matchesDepartment;
   });
+
+  // 显示新增人员模态框
+  const showAddStaffModal = () => {
+    form.resetFields();
+    setIsModalVisible(true);
+  };
+
+  // 处理模态框确认
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
+      await staffAPI.createStaff(values);
+      message.success('人员创建成功');
+      setIsModalVisible(false);
+      form.resetFields();
+      // 重新获取人员列表
+      fetchStaff();
+    } catch (error) {
+      console.error('创建人员失败:', error);
+      message.error('创建人员失败');
+    }
+  };
+
+  // 处理模态框取消
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    form.resetFields();
+  };
 
   const columns = [
     {
@@ -126,7 +156,10 @@ const StaffPage: React.FC = () => {
           <Option value="105">眼科</Option>
           <Option value="0">管理员</Option>
         </Select>
-        <Button type="primary">新增人员</Button>
+        <Button type="primary" onClick={showAddStaffModal}>
+          <UserAddOutlined />
+          新增人员
+        </Button>
       </div>
 
       <Table
@@ -135,6 +168,62 @@ const StaffPage: React.FC = () => {
         rowKey="id"
         loading={loading}
       />
+
+      {/* 新增人员模态框 */}
+      <Modal
+        title="新增人员"
+        open={isModalVisible}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          name="staff_form"
+        >
+          <Form.Item
+            name="name"
+            label="姓名"
+            rules={[{ required: true, message: '请输入姓名' }]}
+          >
+            <Input placeholder="请输入姓名" />
+          </Form.Item>
+          <Form.Item
+            name="departmentId"
+            label="所属科室"
+            rules={[{ required: true, message: '请选择所属科室' }]}
+          >
+            <Select placeholder="请选择科室">
+              <Option value={101}>内科</Option>
+              <Option value={102}>外科</Option>
+              <Option value={103}>儿科</Option>
+              <Option value={104}>妇科</Option>
+              <Option value={105}>眼科</Option>
+              <Option value={0}>管理员</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="position"
+            label="职位"
+            rules={[{ required: true, message: '请输入职位' }]}
+          >
+            <Input placeholder="请输入职位" />
+          </Form.Item>
+          <Form.Item
+            name="role"
+            label="角色"
+            rules={[{ required: true, message: '请选择角色' }]}
+          >
+            <Select placeholder="请选择角色">
+              <Option value="doctor">医生</Option>
+              <Option value="nurse">护士</Option>
+              <Option value="admin">管理员</Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

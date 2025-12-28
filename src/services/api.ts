@@ -37,6 +37,11 @@ export const staffAPI = {
     request
       .get<{ success: boolean; data: Staff[] }>('/staff')
       .then((res) => res.data),
+  createStaff: (data: Omit<Staff, 'id'>) =>
+    request.post<Staff>('/staff', data),
+  updateStaff: (id: number, data: Partial<Staff>) =>
+    request.put<Staff>(`/staff/${id}`, data),
+  deleteStaff: (id: number) => request.delete(`/staff/${id}`),
 };
 
 // 患者服务API

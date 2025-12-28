@@ -140,38 +140,71 @@ mock.onDelete(/\/departments\/\d+/).reply((config) => {
 });
 
 // 人员管理相关接口
+let staffData: Staff[] = [
+  {
+    id: 1,
+    name: '张医生',
+    departmentId: 101,
+    position: '主任医师',
+    role: 'doctor',
+  },
+  {
+    id: 2,
+    name: '李护士',
+    departmentId: 101,
+    position: '护士',
+    role: 'nurse',
+  },
+  {
+    id: 3,
+    name: '王管理员',
+    departmentId: 0,
+    position: '系统管理员',
+    role: 'admin',
+  },
+  {
+    id: 4,
+    name: '刘医生',
+    departmentId: 102,
+    position: '副主任医师',
+    role: 'doctor',
+  },
+];
+
 mock.onGet('/staff').reply(200, {
   success: true,
-  data: [
-    {
-      id: 1,
-      name: '张医生',
-      departmentId: 101,
-      position: '主任医师',
-      role: 'doctor',
-    },
-    {
-      id: 2,
-      name: '李护士',
-      departmentId: 101,
-      position: '护士',
-      role: 'nurse',
-    },
-    {
-      id: 3,
-      name: '王管理员',
-      departmentId: 0,
-      position: '系统管理员',
-      role: 'admin',
-    },
-    {
-      id: 4,
-      name: '刘医生',
-      departmentId: 102,
-      position: '副主任医师',
-      role: 'doctor',
-    },
-  ] as Staff[],
+  data: staffData,
+});
+
+// 创建人员
+mock.onPost('/staff').reply((config) => {
+  const newStaff: Staff = {
+    ...JSON.parse(config.data),
+    id: Date.now(), // 简单模拟ID生成
+  };
+  staffData.push(newStaff);
+  return [200, { success: true, data: newStaff }];
+});
+
+// 更新人员
+mock.onPut(/\/staff\/\d+/).reply((config) => {
+  const url = config.url;
+  const id = Number(url?.split('/').pop());
+  const updatedStaff = JSON.parse(config.data);
+
+  staffData = staffData.map((item) =>
+    item.id === id ? { ...item, ...updatedStaff } : item,
+  );
+
+  return [200, { success: true, data: updatedStaff }];
+});
+
+// 删除人员
+mock.onDelete(/\/staff\/\d+/).reply((config) => {
+  const url = config.url;
+  const id = Number(url?.split('/').pop());
+  staffData = staffData.filter((item) => item.id !== id);
+  return [200, { success: true, message: `人员${id}删除成功` }];
 });
 
 // 患者档案相关接口
