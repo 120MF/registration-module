@@ -2,17 +2,22 @@ import { FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Button, Table, Tag, Space, message, Card } from 'antd';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { doctorAPI } from '../../services/api';
+import { doctorAPI, prescriptionAPI } from '../../services/api';
 import { useAuthStore } from '../../stores';
-import type { DoctorRegistration } from '../../types';
+import type { DoctorRegistration, Prescription } from '../../types';
 import PrescriptionModal from '../../components/PrescriptionModal';
+
+// 扩展DoctorRegistration类型以包含处方信息
+interface DoctorRegistrationWithPrescription extends DoctorRegistration {
+  prescription?: Prescription;
+}
 
 const AppointmentsPage: React.FC = () => {
   const [registrations, setRegistrations] = useState<DoctorRegistration[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedRegistration, setSelectedRegistration] =
-    useState<DoctorRegistration | null>(null);
+    useState<DoctorRegistrationWithPrescription | null>(null);
 
   const { user } = useAuthStore();
   const doctorId = user?.staffId;
@@ -27,6 +32,7 @@ const AppointmentsPage: React.FC = () => {
     setLoading(true);
     try {
       const response = await doctorAPI.getTodayRegistrations(doctorId);
+      // 由于后端API已经返回了hasPrescription字段，我们直接使用
       setRegistrations(response || []);
     } catch (error) {
       console.error('获取挂号单失败:', error);
@@ -43,9 +49,29 @@ const AppointmentsPage: React.FC = () => {
   }, [doctorId]);
 
   // 打开开处方模态框
-  const handleOpenPrescriptionModal = (record: DoctorRegistration) => {
-    setSelectedRegistration(record);
-    setModalVisible(true);
+  const handleOpenPrescriptionModal = async (record: DoctorRegistration) => {
+    // 如果是编辑现有处方，则先获取处方详情
+    if (record.hasPrescription) {
+      try {
+        // 获取该挂号对应的处方
+        const prescriptions = await prescriptionAPI.getPrescriptions();
+        const prescription = prescriptions.find(p => p.reg_id === record.id && p.staff_id === doctorId);
+        if (prescription) {
+          // 将挂号记录和处方信息一起设置
+          setSelectedRegistration({...record, prescription});
+          setModalVisible(true);
+        } else {
+          message.error('未找到对应的处方记录');
+        }
+      } catch (error) {
+        console.error('获取处方详情失败:', error);
+        message.error('获取处方详情失败');
+      }
+    } else {
+      // 开具新处方
+      setSelectedRegistration(record);
+      setModalVisible(true);
+    }
   };
 
   // 处方提交成功后的回调
@@ -114,7 +140,7 @@ const AppointmentsPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 150,
       render: (_: any, record: DoctorRegistration) => (
         <Space>
           {!record.hasPrescription && (
@@ -128,8 +154,13 @@ const AppointmentsPage: React.FC = () => {
             </Button>
           )}
           {record.hasPrescription && (
-            <Button type="link" size="small" disabled>
-              已开处方
+            <Button
+              type="primary"
+              size="small"
+              icon={<FileTextOutlined />}
+              onClick={() => handleOpenPrescriptionModal(record)}
+            >
+              查看/编辑
             </Button>
           )}
         </Space>
@@ -165,6 +196,7 @@ const AppointmentsPage: React.FC = () => {
           visible={modalVisible}
           registration={selectedRegistration}
           doctorId={doctorId!}
+          prescription={selectedRegistration.prescription} // 传递处方信息用于编辑
           onCancel={() => {
             setModalVisible(false);
             setSelectedRegistration(null);

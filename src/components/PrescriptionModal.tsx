@@ -10,6 +10,7 @@ interface PrescriptionModalProps {
   visible: boolean;
   registration: DoctorRegistration;
   doctorId: number;
+  prescription?: Prescription; // 可选的处方，用于编辑现有处方
   onCancel: () => void;
   onSubmit: () => void;
 }
@@ -18,17 +19,30 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
   visible,
   registration,
   doctorId,
+  prescription, // 现有处方（编辑时使用）
   onCancel,
   onSubmit,
 }) => {
   const [form] = Form.useForm();
 
-  // 重置表单
+  // 重置表单并设置初始值
   useEffect(() => {
-    if (!visible) {
-      form.resetFields();
+    if (visible && prescription) {
+      // 编辑现有处方
+      form.setFieldsValue({
+        symptoms: prescription.symptoms,
+        diagnosis: prescription.diagnosis,
+        remark: prescription.remark || '',
+      });
+    } else if (visible) {
+      // 新建处方
+      form.setFieldsValue({
+        symptoms: '',
+        diagnosis: '',
+        remark: '',
+      });
     }
-  }, [visible, form]);
+  }, [visible, prescription, form]);
 
   const handleSubmit = async (values: {
     symptoms: string;
@@ -36,31 +50,46 @@ const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
     remark?: string;
   }) => {
     try {
-      const prescriptionData: Omit<Prescription, 'prescription_id'> = {
-        reg_id: registration.id, // 自动填充挂号ID
-        patient_id: registration.patientId, // 自动填充患者ID
-        staff_id: doctorId, // 自动填充医生ID
-        prescription_date: new Date().toISOString(),
-        prescription_status: 1, // 有效
-        symptoms: values.symptoms,
-        diagnosis: values.diagnosis,
-        remark: values.remark || '',
-        create_time: new Date().toISOString(),
-        update_time: new Date().toISOString(),
-      };
+      if (prescription) {
+        // 更新现有处方
+        const updatedPrescription: Partial<Prescription> = {
+          symptoms: values.symptoms,
+          diagnosis: values.diagnosis,
+          remark: values.remark || '',
+          update_time: new Date().toISOString(),
+        };
 
-      await prescriptionAPI.createPrescription(prescriptionData);
-      message.success('处方开具成功');
+        await prescriptionAPI.updatePrescription(prescription.prescription_id, updatedPrescription);
+        message.success('处方更新成功');
+      } else {
+        // 创建新处方
+        const newPrescriptionData: Omit<Prescription, 'prescription_id'> = {
+          reg_id: registration.id, // 自动填充挂号ID
+          patient_id: registration.patientId, // 自动填充患者ID
+          staff_id: doctorId, // 自动填充医生ID
+          prescription_date: new Date().toISOString(),
+          prescription_status: 1, // 有效
+          symptoms: values.symptoms,
+          diagnosis: values.diagnosis,
+          remark: values.remark || '',
+          create_time: new Date().toISOString(),
+          update_time: new Date().toISOString(),
+        };
+
+        await prescriptionAPI.createPrescription(newPrescriptionData);
+        message.success('处方开具成功');
+      }
+
       onSubmit(); // 调用回调刷新列表
     } catch (error) {
-      console.error('开处方失败:', error);
-      message.error('开处方失败，请稍后重试');
+      console.error('处方操作失败:', error);
+      message.error(prescription ? '处方更新失败，请稍后重试' : '开处方失败，请稍后重试');
     }
   };
 
   return (
     <Modal
-      title="开具处方"
+      title={prescription ? "编辑处方" : "开具处方"}
       open={visible}
       onCancel={onCancel}
       footer={null}
