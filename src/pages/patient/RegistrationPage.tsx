@@ -33,6 +33,10 @@ const RegistrationPage: React.FC = () => {
   const [selectedScheduleAmount, setSelectedScheduleAmount] =
     useState<number>(0);
 
+  // 监听表单字段值的变化
+  const scheduleId = Form.useWatch('scheduleId', form);
+  const paymentMethod = Form.useWatch('paymentMethod', form);
+
   // 使用全局状态
   const {
     departments,
@@ -268,7 +272,7 @@ const RegistrationPage: React.FC = () => {
           >
             <Select
               placeholder="请选择缴费方式"
-              disabled={!form.getFieldValue('scheduleId')}
+              disabled={!scheduleId}
             >
               <Select.Option value="cash">现金</Select.Option>
               <Select.Option value="card">银行卡</Select.Option>
@@ -283,10 +287,7 @@ const RegistrationPage: React.FC = () => {
                 type="primary"
                 htmlType="submit"
                 loading={submitting}
-                disabled={
-                  !form.getFieldValue('scheduleId') ||
-                  !form.getFieldValue('paymentMethod')
-                }
+                disabled={!scheduleId || !paymentMethod}
               >
                 确认挂号并缴费
               </Button>
